@@ -6,7 +6,10 @@ import (
 	"MovieBot/events/telegram"
 	postgresql "MovieBot/storage/postgres"
 	"flag"
+	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 	"log"
+	"os"
 )
 
 const (
@@ -15,11 +18,24 @@ const (
 )
 
 func main() {
+	if err := initConfig(); err != nil {
+		log.Fatalf("can't read config: %s", err.Error())
+	}
+
 	tgClient := telegramClient.New(host, mustToken())
 
-	cfg := postgresql.Config{}
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("can't read .env: %s", err.Error())
+	}
 
-	db, err := postgresql.NewPostgresDB(cfg)
+	db, err := postgresql.NewPostgresDB(postgresql.Config{
+		Host:     viper.GetString("db.host"),
+		Port:     viper.GetString("db.port"),
+		Username: viper.GetString("db.username"),
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   viper.GetString("db.dbname"),
+		SSLMode:  viper.GetString("db.sslmode"),
+	})
 	if err != nil {
 		log.Fatalf("can't sign in db: %s", err.Error())
 	}
@@ -45,4 +61,10 @@ func mustToken() string {
 	}
 
 	return *token
+}
+
+func initConfig() error {
+	viper.AddConfigPath("configs")
+	viper.SetConfigName("config")
+	return viper.ReadInConfig()
 }
