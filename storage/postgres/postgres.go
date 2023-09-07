@@ -3,6 +3,8 @@ package postgres
 import (
 	"MovieBot/entities"
 	"MovieBot/lib"
+	"MovieBot/storage"
+	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -38,6 +40,11 @@ func (p *Postgres) PickRandom(username string) (*entities.Movie, error) {
 
 	var title string
 	err := p.db.QueryRow(query, username).Scan(&title)
+
+	if err == sql.ErrNoRows {
+		return nil, storage.ErrNoSavedMovies
+	}
+
 	if err != nil {
 		return nil, lib.Wrap("can't scan title from db:", err)
 	}

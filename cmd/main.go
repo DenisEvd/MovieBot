@@ -6,6 +6,7 @@ import (
 	"MovieBot/events/telegram"
 	postgresql "MovieBot/storage/postgres"
 	"flag"
+	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"log"
@@ -22,6 +23,7 @@ func main() {
 		log.Fatalf("can't read config: %s", err.Error())
 	}
 
+	fmt.Println(os.Getenv("TG_TOKEN"))
 	tgClient := telegramClient.New(host, mustToken())
 
 	if err := godotenv.Load(); err != nil {
@@ -53,12 +55,9 @@ func main() {
 }
 
 func mustToken() string {
-	token := flag.String("token", "", "token for access to telegram bot")
-	flag.Parse()
+	token := flag.String("tg-token", "", "token for access to telegram bot")
 
-	if *token == "" {
-		log.Fatal("token is not specified")
-	}
+	flag.Parse()
 
 	return *token
 }
