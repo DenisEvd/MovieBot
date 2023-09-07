@@ -35,11 +35,11 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 func (p *Processor) saveMovie(text string, chatID int, username string) (err error) {
 	defer func() { err = lib.Wrap("can't do command: save page", err) }()
 
-	movie := entities.Movie{
+	movie := &entities.Movie{
 		Title: text,
 	}
 
-	isExists, err := p.storage.IsExists()
+	isExists, err := p.storage.IsExists(username, movie)
 	if err != nil {
 		return err
 	}
@@ -48,9 +48,7 @@ func (p *Processor) saveMovie(text string, chatID int, username string) (err err
 		return p.tg.SendMessage(chatID, msgAlreadyExists)
 	}
 
-	if err = p.storage.AddMovie(movie); err != nil {
-		return err
-	}
+	p.storage.AddMovie(username, movie)
 
 	return p.tg.SendMessage(chatID, msgSaved)
 }
@@ -71,7 +69,7 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		return err
 	}
 
-	return p.storage.Remove(chatID, movie)
+	return p.storage.Remove(username, movie)
 }
 
 func (p *Processor) sendHelp(chatID int) error {

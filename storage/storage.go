@@ -6,10 +6,10 @@ import (
 )
 
 type Storage interface {
-	AddMovie(movie entities.Movie) error
-	PickRandom(username string) (entities.Movie, error)
-	Remove(chatID int, movie entities.Movie) error
-	IsExists() (bool, error)
+	AddMovie(username string, movie *entities.Movie)
+	PickRandom(username string) (*entities.Movie, error)
+	Remove(username string, movie *entities.Movie) error
+	IsExists(username string, movie *entities.Movie) (bool, error)
 }
 
 var ErrNoSavedMovies = errors.New("no saved movies")
