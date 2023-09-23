@@ -85,8 +85,14 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		return err
 	}
 
-	if err = p.tg.SendMessage(chatID, p.movieMessage(movie)); err != nil { // In progress
-		return err
+	if movie.Poster.URL != "" {
+		if err = p.tg.SendPhoto(chatID, p.movieMessage(movie), movie.Poster.URL); err != nil {
+			return err
+		}
+	} else {
+		if err = p.tg.SendMessage(chatID, p.movieMessage(movie)); err != nil {
+			return err
+		}
 	}
 
 	return p.storage.Remove(username, movieID)

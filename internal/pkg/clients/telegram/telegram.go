@@ -3,6 +3,7 @@ package telegram
 import (
 	"MovieBot/internal/lib"
 	"encoding/json"
+	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 const (
 	getUpdatesMethod  = "getUpdates"
 	sendMessageMethod = "sendMessage"
+	sendPhotoMethod   = "sendPhoto"
 )
 
 type Client struct {
@@ -88,7 +90,21 @@ func (c *Client) SendMessage(chatID int, text string) error {
 
 	_, err := c.doQuery(sendMessageMethod, q)
 	if err != nil {
-		return lib.Wrap("can't send message", err)
+		return errors.Wrap(err, "can't send message")
+	}
+
+	return nil
+}
+
+func (c *Client) SendPhoto(chatID int, text string, photoURL string) error {
+	q := url.Values{}
+	q.Add("chat_id", strconv.Itoa(chatID))
+	q.Add("photo", photoURL)
+	q.Add("caption", text)
+
+	_, err := c.doQuery(sendPhotoMethod, q)
+	if err != nil {
+		return errors.Wrap(err, "can't send photo")
 	}
 
 	return nil

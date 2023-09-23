@@ -21,10 +21,15 @@ type Movie struct {
 	Title       string  `json:"name"`
 	Year        int     `json:"year"`
 	Description string  `json:"shortDescription"`
+	Poster      Poster  `json:"poster"`
 	Rating      Ratings `json:"rating"`
 	MovieLength int     `json:"movieLength"`
 }
 
 type Ratings struct {
 	IMDB float32 `json:"imdb"`
+}
+
+type Poster struct {
+	URL string `json:"url"`
 }
