@@ -1,9 +1,9 @@
 package postgres
 
 import (
-	"MovieBot/entities"
-	"MovieBot/lib"
-	"MovieBot/storage"
+	"MovieBot/internal/lib"
+	"MovieBot/internal/pkg/clients/kinopoisk"
+	"MovieBot/internal/pkg/storage"
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -35,40 +35,40 @@ func New(db *sqlx.DB) *Postgres {
 //	return []entities.Movie{}, nil
 //}
 
-func (p *Postgres) PickRandom(username string) (*entities.Movie, error) {
-	query := fmt.Sprintf("SELECT movie_title FROM %s r WHERE r.username=$1 LIMIT 1", recordsTable)
+func (p *Postgres) PickRandom(username string) (int, error) {
+	query := fmt.Sprintf("SELECT movie_id FROM %s r WHERE r.username=$1 LIMIT 1", recordsTable)
 
-	var title string
-	err := p.db.QueryRow(query, username).Scan(&title)
+	var movieID int
+	err := p.db.QueryRow(query, username).Scan(&movieID)
 
 	if err == sql.ErrNoRows {
-		return nil, storage.ErrNoSavedMovies
+		return 0, storage.ErrNoSavedMovies
 	}
 
 	if err != nil {
-		return nil, lib.Wrap("can't scan title from db:", err)
+		return 0, lib.Wrap("can't scan title from db:", err)
 	}
 
-	return &entities.Movie{Title: title}, nil
+	return movieID, nil
 }
 
-func (p *Postgres) AddMovie(username string, movie *entities.Movie) {
-	query := fmt.Sprintf("INSERT INTO %s (username, movie_title) values ($1, $2)", recordsTable)
-	p.db.QueryRow(query, username, movie.Title)
+func (p *Postgres) AddMovie(username string, movie *kinopoisk.MovieShortInfo) {
+	query := fmt.Sprintf("INSERT INTO %s (username, movie_title, movie_id) VALUES ($1, $2, $3)", recordsTable)
+	_, _ = p.db.Exec(query, username, movie.Title, movie.ID)
 }
 
-func (p *Postgres) Remove(username string, movie *entities.Movie) error {
-	query := fmt.Sprintf("DELETE FROM %s r WHERE r.username=$1 AND r.movie_title=$2", recordsTable)
+func (p *Postgres) Remove(username string, movieID int) error {
+	query := fmt.Sprintf("DELETE FROM %s r WHERE r.username=$1 AND r.movie_id=$2", recordsTable)
 
-	_, err := p.db.Exec(query, username, movie.Title)
+	_, err := p.db.Exec(query, username, movieID)
 	return err
 }
 
-func (p *Postgres) IsExists(username string, movie *entities.Movie) (bool, error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s r WHERE r.username=$1 AND r.movie_title=$2 LIMIT 1", recordsTable)
+func (p *Postgres) IsExists(username string, movieID int) (bool, error) {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s r WHERE r.username=$1 AND r.movie_id=$2 LIMIT 1", recordsTable)
 
 	var count int
-	err := p.db.Get(&count, query, username, movie.Title)
+	err := p.db.Get(&count, query, username, movieID)
 	if err != nil {
 		return false, lib.Wrap("can't check record in db:", err)
 	}

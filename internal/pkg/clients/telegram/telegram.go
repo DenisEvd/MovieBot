@@ -1,7 +1,7 @@
 package telegram
 
 import (
-	"MovieBot/lib"
+	"MovieBot/internal/lib"
 	"encoding/json"
 	"io"
 	"net/http"

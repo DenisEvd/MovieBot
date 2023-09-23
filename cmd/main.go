@@ -1,10 +1,11 @@
 package main
 
 import (
-	telegramClient "MovieBot/clients/telegram"
-	eventConsumer "MovieBot/consumer/event-consumer"
-	"MovieBot/events/telegram"
-	postgresql "MovieBot/storage/postgres"
+	"MovieBot/internal/pkg/clients/kinopoisk"
+	telegramClient "MovieBot/internal/pkg/clients/telegram"
+	eventConsumer "MovieBot/internal/pkg/consumer/event-consumer"
+	"MovieBot/internal/pkg/events/telegram"
+	postgresql "MovieBot/internal/pkg/storage/postgres"
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
@@ -14,7 +15,8 @@ import (
 )
 
 const (
-	host      = "api.telegram.org"
+	hostTg    = "api.telegram.org"
+	hostKp    = "api.kinopoisk.dev"
 	batchSize = 100
 )
 
@@ -24,7 +26,7 @@ func main() {
 	}
 
 	fmt.Println(os.Getenv("TG_TOKEN"))
-	tgClient := telegramClient.New(host, mustToken())
+	tgClient := telegramClient.New(hostTg, mustToken())
 
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("can't read .env: %s", err.Error())
@@ -42,9 +44,11 @@ func main() {
 		log.Fatalf("can't sign in db: %s", err.Error())
 	}
 
+	movieApi := kinopoisk.NewKp(hostKp, os.Getenv("KINOPISK_TOKEN"))
+
 	postgres := postgresql.New(db)
 
-	eventsProcessor := telegram.New(tgClient, postgres)
+	eventsProcessor := telegram.New(tgClient, movieApi, postgres)
 
 	consumer := eventConsumer.New(eventsProcessor, eventsProcessor, batchSize)
 

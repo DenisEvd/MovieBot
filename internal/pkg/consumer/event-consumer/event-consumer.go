@@ -1,7 +1,7 @@
 package event_consumer
 
 import (
-	"MovieBot/events"
+	"MovieBot/internal/pkg/events"
 	"log"
 	"time"
 )

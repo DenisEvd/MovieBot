@@ -1,10 +1,9 @@
 package telegram
 
 import (
-	"MovieBot/entities"
-	"MovieBot/lib"
-	"MovieBot/storage"
-	"errors"
+	"MovieBot/internal/lib"
+	"MovieBot/internal/pkg/storage"
+	"github.com/pkg/errors"
 	"log"
 	"strings"
 )
@@ -32,15 +31,27 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	}
 }
 
-func (p *Processor) saveMovie(text string, chatID int, username string) (err error) {
-	defer func() { err = lib.Wrap("can't do command: save page", err) }()
-
-	movie := &entities.Movie{
-		Title: text,
+func (p *Processor) saveMovie(text string, chatID int, username string) error {
+	movies, err := p.kp.FindMovieByTitle(text, 3)
+	if err != nil {
+		return errors.Wrap(err, "can't take movies from API")
 	}
 
-	isExists, err := p.storage.IsExists(username, movie)
+	if len(movies) == 0 {
+		return p.tg.SendMessage(chatID, msgCanNotFindMovie)
+	}
+	var max float32 = 0
+	ind := 0
+	for i, movie := range movies {
+		if movie.Rating > max {
+			ind = i
+			max = movie.Rating
+		}
+	}
+
+	isExists, err := p.storage.IsExists(username, movies[ind].ID)
 	if err != nil {
+		log.Println("here")
 		return err
 	}
 
@@ -48,15 +59,19 @@ func (p *Processor) saveMovie(text string, chatID int, username string) (err err
 		return p.tg.SendMessage(chatID, msgAlreadyExists)
 	}
 
-	p.storage.AddMovie(username, movie)
+	p.storage.AddMovie(username, &movies[ind])
 
 	return p.tg.SendMessage(chatID, msgSaved)
 }
 
 func (p *Processor) sendRandom(chatID int, username string) (err error) {
-	defer func() { err = lib.Wrap("can't do command: send random", err) }()
+	defer func() {
+		if err != nil {
+			err = lib.Wrap("can't do command: send random", err)
+		}
+	}()
 
-	movie, err := p.storage.PickRandom(username)
+	movieID, err := p.storage.PickRandom(username)
 	if err != nil && !errors.Is(err, storage.ErrNoSavedMovies) {
 		return err
 	}
@@ -65,11 +80,16 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		return p.tg.SendMessage(chatID, msgNoSavedMovies)
 	}
 
-	if err = p.tg.SendMessage(chatID, movie.Title); err != nil {
+	movie, err := p.kp.GetMovieByID(movieID)
+	if err != nil {
 		return err
 	}
 
-	return p.storage.Remove(username, movie)
+	if err = p.tg.SendMessage(chatID, p.movieMessage(movie)); err != nil { // In progress
+		return err
+	}
+
+	return p.storage.Remove(username, movieID)
 }
 
 func (p *Processor) sendHelp(chatID int) error {
