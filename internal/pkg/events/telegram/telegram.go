@@ -1,12 +1,11 @@
 package telegram
 
 import (
-	"MovieBot/internal/lib"
 	"MovieBot/internal/pkg/clients/kinopoisk"
 	"MovieBot/internal/pkg/clients/telegram"
 	"MovieBot/internal/pkg/events"
 	"MovieBot/internal/pkg/storage"
-	"errors"
+	"github.com/pkg/errors"
 )
 
 type Processor struct {
@@ -39,7 +38,7 @@ func New(client *telegram.Client, movieAPI kinopoisk.MovieAPI, storage storage.S
 func (p *Processor) Fetch(limit int) ([]events.Event, error) {
 	updates, err := p.tg.Updates(p.offset, limit)
 	if err != nil {
-		return nil, lib.Wrap("can't get events", err)
+		return nil, errors.Wrap(err, "can't get events")
 	}
 
 	if len(updates) == 0 {
@@ -61,18 +60,18 @@ func (p *Processor) Process(event events.Event) error {
 	case events.Message:
 		return p.processMessage(event)
 	default:
-		return lib.Wrap(processingError, ErrUnknownEventType)
+		return errors.Wrap(ErrUnknownEventType, processingError)
 	}
 }
 
 func (p *Processor) processMessage(event events.Event) error {
 	meta, err := meta(event)
 	if err != nil {
-		return lib.Wrap(processingError, err)
+		return errors.Wrap(err, processingError)
 	}
 
 	if err := p.doCmd(event.Text, meta.ChatID, meta.Username); err != nil {
-		return lib.Wrap(processingError, err)
+		return errors.Wrap(err, processingError)
 	}
 
 	return nil
@@ -81,7 +80,7 @@ func (p *Processor) processMessage(event events.Event) error {
 func meta(event events.Event) (Meta, error) {
 	res, ok := event.Meta.(Meta)
 	if !ok {
-		return Meta{}, lib.Wrap("can't get meta", ErrUnknownMetaType)
+		return Meta{}, errors.Wrap(ErrUnknownMetaType, "can't get meta")
 	}
 
 	return res, nil

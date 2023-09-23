@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"MovieBot/internal/lib"
 	"encoding/json"
 	"github.com/pkg/errors"
 	"io"
@@ -64,20 +63,20 @@ func (c *Client) doQuery(method string, query url.Values) ([]byte, error) {
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
-		return nil, lib.Wrap(errMessage, err)
+		return nil, errors.Wrap(err, errMessage)
 	}
 
 	req.URL.RawQuery = query.Encode()
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, lib.Wrap(errMessage, err)
+		return nil, errors.Wrap(err, errMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, lib.Wrap(errMessage, err)
+		return nil, errors.Wrap(err, errMessage)
 	}
 
 	return body, nil

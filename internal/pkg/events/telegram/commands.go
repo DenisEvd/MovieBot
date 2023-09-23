@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"MovieBot/internal/lib"
 	"MovieBot/internal/pkg/storage"
 	"github.com/pkg/errors"
 	"log"
@@ -67,7 +66,7 @@ func (p *Processor) saveMovie(text string, chatID int, username string) error {
 func (p *Processor) sendRandom(chatID int, username string) (err error) {
 	defer func() {
 		if err != nil {
-			err = lib.Wrap("can't do command: send random", err)
+			err = errors.Wrap(err, "can't do command: send random")
 		}
 	}()
 

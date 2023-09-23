@@ -1,13 +1,13 @@
 package postgres
 
 import (
-	"MovieBot/internal/lib"
 	"MovieBot/internal/pkg/clients/kinopoisk"
 	"MovieBot/internal/pkg/storage"
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
 )
 
 type Config struct {
@@ -46,7 +46,7 @@ func (p *Postgres) PickRandom(username string) (int, error) {
 	}
 
 	if err != nil {
-		return 0, lib.Wrap("can't scan title from db:", err)
+		return 0, errors.Wrap(err, "can't scan title from db")
 	}
 
 	return movieID, nil
@@ -70,7 +70,7 @@ func (p *Postgres) IsExists(username string, movieID int) (bool, error) {
 	var count int
 	err := p.db.Get(&count, query, username, movieID)
 	if err != nil {
-		return false, lib.Wrap("can't check record in db:", err)
+		return false, errors.Wrap(err, "can't check record in db:")
 	}
 	return count != 0, nil
 }
