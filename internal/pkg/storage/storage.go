@@ -1,12 +1,14 @@
 package storage
 
 import (
-	"MovieBot/internal/pkg/clients/kinopoisk"
 	"errors"
 )
 
 type Storage interface {
-	AddMovie(username string, movie *kinopoisk.MovieShortInfo)
+	AddRequest(text string) (int, error)
+	DeleteRequest(id int) (string, error)
+
+	AddMovie(username string, movieID int, movieTitle string) error
 	PickRandom(username string) (int, error)
 	Remove(username string, movieID int) error
 	IsExists(username string, movieID int) (bool, error)

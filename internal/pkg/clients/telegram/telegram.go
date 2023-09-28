@@ -11,9 +11,12 @@ import (
 )
 
 const (
-	getUpdatesMethod  = "getUpdates"
-	sendMessageMethod = "sendMessage"
-	sendPhotoMethod   = "sendPhoto"
+	getUpdatesMethod       = "getUpdates"
+	sendMessageMethod      = "sendMessage"
+	sendPhotoMethod        = "sendPhoto"
+	editMessageReplyMarkup = "editMessageReplyMarkup"
+	deleteMessageMethod    = "deleteMessage"
+	answerCallbackMethod   = "answerCallbackQuery"
 )
 
 type Client struct {
@@ -52,6 +55,101 @@ func (c *Client) Updates(offset, limit int) ([]Update, error) {
 	return res.Result, nil
 }
 
+func (c *Client) SendMessage(chatID int, text string) error {
+	q := url.Values{}
+	q.Add("chat_id", strconv.Itoa(chatID))
+	q.Add("text", text)
+
+	_, err := c.doQuery(sendMessageMethod, q)
+	if err != nil {
+		return errors.Wrap(err, "can't send message")
+	}
+
+	return nil
+}
+
+func (c *Client) SendPhotoWithInlineKeyboard(chatID int, text string, photoURL string, buttons []InlineKeyboardButton) error {
+	buttonsMarkup := c.keyboardMarkup(buttons, 2)
+	data, err := json.Marshal(buttonsMarkup)
+	if err != nil {
+		return errors.Wrap(err, "marshaling markup")
+	}
+
+	q := url.Values{}
+	q.Add("chat_id", strconv.Itoa(chatID))
+	q.Add("photo", photoURL)
+	q.Add("caption", text)
+	q.Add("reply_markup", string(data))
+
+	_, err = c.doQuery(sendPhotoMethod, q)
+	if err != nil {
+		return errors.Wrap(err, "can't send photo")
+	}
+
+	return nil
+}
+
+func (c *Client) SendMessageWithInlineKeyboard(chatID int, text string, buttons []InlineKeyboardButton) error {
+	buttonsMarkup := c.keyboardMarkup(buttons, 2)
+	data, err := json.Marshal(buttonsMarkup)
+	if err != nil {
+		return errors.Wrap(err, "can't serialise buttons markup")
+	}
+
+	q := url.Values{}
+	q.Add("chat_id", strconv.Itoa(chatID))
+	q.Add("text", text)
+	q.Add("reply_markup", string(data))
+
+	_, err = c.doQuery(sendMessageMethod, q)
+
+	if err != nil {
+		return errors.Wrap(err, "can't send buttons markup")
+	}
+
+	return nil
+}
+
+func (c *Client) EditMessageReplyMarkup(chatID int, messageID int) error {
+	q := url.Values{}
+	q.Add("chat_id", strconv.Itoa(chatID))
+	q.Add("message_id", strconv.Itoa(messageID))
+	q.Add("reply_markup", "{}")
+
+	_, err := c.doQuery(editMessageReplyMarkup, q)
+	if err != nil {
+		return errors.Wrap(err, "can't edit message")
+	}
+
+	return nil
+}
+
+func (c *Client) DeleteMessage(chatID int, messageID int) error {
+	q := url.Values{}
+	q.Add("chat_id", strconv.Itoa(chatID))
+	q.Add("message_id", strconv.Itoa(messageID))
+
+	_, err := c.doQuery(deleteMessageMethod, q)
+	if err != nil {
+		return errors.Wrap(err, "can't delete message")
+	}
+
+	return nil
+}
+
+func (c *Client) AnswerCallbackQuery(queryID string, text string) error {
+	q := url.Values{}
+	q.Add("callback_query_id", queryID)
+	q.Add("text", text)
+
+	_, err := c.doQuery(answerCallbackMethod, q)
+	if err != nil {
+		return errors.Wrap(err, "can't answer on callback query")
+	}
+
+	return nil
+}
+
 func (c *Client) doQuery(method string, query url.Values) ([]byte, error) {
 	const errMessage = "can't do request"
 
@@ -82,29 +180,21 @@ func (c *Client) doQuery(method string, query url.Values) ([]byte, error) {
 	return body, nil
 }
 
-func (c *Client) SendMessage(chatID int, text string) error {
-	q := url.Values{}
-	q.Add("chat_id", strconv.Itoa(chatID))
-	q.Add("text", text)
-
-	_, err := c.doQuery(sendMessageMethod, q)
-	if err != nil {
-		return errors.Wrap(err, "can't send message")
+func (c *Client) keyboardMarkup(buttons []InlineKeyboardButton, rowLength int) InlineKeyboardMarkup {
+	rows := len(buttons) / rowLength
+	if len(buttons)%rowLength != 0 {
+		rows++
 	}
 
-	return nil
-}
-
-func (c *Client) SendPhoto(chatID int, text string, photoURL string) error {
-	q := url.Values{}
-	q.Add("chat_id", strconv.Itoa(chatID))
-	q.Add("photo", photoURL)
-	q.Add("caption", text)
-
-	_, err := c.doQuery(sendPhotoMethod, q)
-	if err != nil {
-		return errors.Wrap(err, "can't send photo")
+	markup := make([][]InlineKeyboardButton, rows)
+	for i := range markup {
+		markup[i] = make([]InlineKeyboardButton, 0, rowLength)
 	}
 
-	return nil
+	for i, button := range buttons {
+		ind := i / rowLength
+		markup[ind] = append(markup[ind], button)
+	}
+
+	return InlineKeyboardMarkup{InlineKeyboard: markup}
 }

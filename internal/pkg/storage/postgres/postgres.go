@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"MovieBot/internal/pkg/clients/kinopoisk"
 	"MovieBot/internal/pkg/storage"
 	"database/sql"
 	"fmt"
@@ -20,7 +19,8 @@ type Config struct {
 }
 
 const (
-	recordsTable = "records"
+	recordsTable  = "records"
+	requestsTable = "requests"
 )
 
 type Postgres struct {
@@ -34,6 +34,40 @@ func New(db *sqlx.DB) *Postgres {
 //func (p *Postgres) GetAllMovies(userID int) ([]entities.Movie, error) {
 //	return []entities.Movie{}, nil
 //}
+
+func (p *Postgres) AddRequest(text string) (int, error) {
+	var id int
+	query := fmt.Sprintf("INSERT INTO %s (request) values ($1) RETURNING id", requestsTable)
+	row := p.db.QueryRow(query, text)
+	if err := row.Scan(&id); err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (p *Postgres) DeleteRequest(id int) (string, error) {
+	tx, err := p.db.Beginx()
+	if err != nil {
+		return "", err
+	}
+
+	var request string
+	queryGet := fmt.Sprintf("SELECT r.request FROM %s r WHERE r.id=$1", requestsTable)
+	row := tx.QueryRow(queryGet, id)
+	if err := row.Scan(&request); err != nil {
+		_ = tx.Rollback()
+		return "", err
+	}
+
+	queryDelete := fmt.Sprintf("DELETE FROM %s r WHERE r.id=$1", requestsTable)
+	_, err = p.db.Exec(queryDelete, id)
+	if err != nil {
+		_ = tx.Rollback()
+		return "", err
+	}
+
+	return request, tx.Commit()
+}
 
 func (p *Postgres) PickRandom(username string) (int, error) {
 	query := fmt.Sprintf("SELECT movie_id FROM %s r WHERE r.username=$1 LIMIT 1", recordsTable)
@@ -52,9 +86,14 @@ func (p *Postgres) PickRandom(username string) (int, error) {
 	return movieID, nil
 }
 
-func (p *Postgres) AddMovie(username string, movie *kinopoisk.MovieShortInfo) {
+func (p *Postgres) AddMovie(username string, movieID int, movieTitle string) error {
 	query := fmt.Sprintf("INSERT INTO %s (username, movie_title, movie_id) VALUES ($1, $2, $3)", recordsTable)
-	_, _ = p.db.Exec(query, username, movie.Title, movie.ID)
+	_, err := p.db.Exec(query, username, movieTitle, movieID)
+	if err != nil {
+		return errors.Wrap(err, "adding record in db")
+	}
+
+	return nil
 }
 
 func (p *Postgres) Remove(username string, movieID int) error {

@@ -30,7 +30,7 @@ func NewKp(host string, token string) *KpAPI {
 	}
 }
 
-func (k *KpAPI) FindMovieByTitle(title string, limit int) ([]MovieShortInfo, error) {
+func (k *KpAPI) FindMovieByTitle(title string, limit int) ([]MovieByTitle, error) {
 	q := url.Values{}
 	q.Add("page", "1")
 	q.Add("limit", strconv.Itoa(limit))
@@ -49,15 +49,15 @@ func (k *KpAPI) FindMovieByTitle(title string, limit int) ([]MovieShortInfo, err
 	return movies.Docs, nil
 }
 
-func (k *KpAPI) GetMovieByID(movieID int) (Movie, error) {
+func (k *KpAPI) GetMovieByID(movieID int) (MovieByID, error) {
 	data, err := k.doIdQuery(getByID, movieID)
 	if err != nil {
-		return Movie{}, errors.Wrap(err, "can't get movie from api")
+		return MovieByID{}, errors.Wrap(err, "can't get movie from api")
 	}
 
-	var movie Movie
+	var movie MovieByID
 	if err := json.Unmarshal(data, &movie); err != nil {
-		return Movie{}, errors.Wrap(err, "can't unmarshal json")
+		return MovieByID{}, errors.Wrap(err, "can't unmarshal json")
 	}
 
 	return movie, nil

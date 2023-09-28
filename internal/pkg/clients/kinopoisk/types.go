@@ -1,23 +1,25 @@
 package kinopoisk
 
 type MovieAPI interface {
-	FindMovieByTitle(title string, limit int) ([]MovieShortInfo, error)
-	GetMovieByID(movieID int) (Movie, error)
+	FindMovieByTitle(title string, limit int) ([]MovieByTitle, error)
+	GetMovieByID(movieID int) (MovieByID, error)
 }
 
 type MovieResponse struct {
-	Docs []MovieShortInfo `json:"docs"`
+	Docs []MovieByTitle `json:"docs"`
 }
 
-type MovieShortInfo struct {
-	ID     int     `json:"id"`
-	Title  string  `json:"name"`
-	Year   int     `json:"year"`
-	Rating float32 `json:"rating"`
-	Length int     `json:"movieLength"`
+type MovieByTitle struct {
+	ID          int     `json:"id"`
+	Title       string  `json:"name"`
+	Year        int     `json:"year"`
+	Description string  `json:"shortDescription"`
+	Poster      string  `json:"poster"`
+	Rating      float32 `json:"rating"`
+	Length      int     `json:"movieLength"`
 }
 
-type Movie struct {
+type MovieByID struct {
 	Title       string  `json:"name"`
 	Year        int     `json:"year"`
 	Description string  `json:"shortDescription"`

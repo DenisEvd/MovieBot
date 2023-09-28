@@ -1,9 +1,12 @@
 package telegram
 
 import (
+	"MovieBot/internal/pkg/clients/telegram"
 	"MovieBot/internal/pkg/storage"
+	"fmt"
 	"github.com/pkg/errors"
 	"log"
+	"sort"
 	"strings"
 )
 
@@ -26,12 +29,12 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	case StartCmd:
 		return p.sendHello(chatID)
 	default:
-		return p.saveMovie(text, chatID, username)
+		return p.suggestMovie(text, chatID)
 	}
 }
 
-func (p *Processor) saveMovie(text string, chatID int, username string) error {
-	movies, err := p.kp.FindMovieByTitle(text, 3)
+func (p *Processor) suggestMovie(text string, chatID int) error {
+	movies, err := p.kp.FindMovieByTitle(text, 4)
 	if err != nil {
 		return errors.Wrap(err, "can't take movies from API")
 	}
@@ -39,28 +42,21 @@ func (p *Processor) saveMovie(text string, chatID int, username string) error {
 	if len(movies) == 0 {
 		return p.tg.SendMessage(chatID, msgCanNotFindMovie)
 	}
-	var max float32 = 0
-	ind := 0
-	for i, movie := range movies {
-		if movie.Rating > max {
-			ind = i
-			max = movie.Rating
-		}
-	}
 
-	isExists, err := p.storage.IsExists(username, movies[ind].ID)
+	sort.Slice(movies, func(i, j int) bool { return movies[i].Rating > movies[j].Rating })
+
+	id, err := p.storage.AddRequest(text)
 	if err != nil {
-		log.Println("here")
-		return err
+		return errors.Wrap(err, "saving request")
 	}
 
-	if isExists {
-		return p.tg.SendMessage(chatID, msgAlreadyExists)
-	}
+	buttonDataNo := fmt.Sprintf("%s;%d", findMoreButton, id)
+	buttonDataYes := fmt.Sprintf("%s;%d", saveButton, movies[0].ID)
+	buttons := make([]telegram.InlineKeyboardButton, 2)
+	buttons[0], _ = p.makeButton("No", buttonDataNo)
+	buttons[1], _ = p.makeButton("Yes", buttonDataYes)
 
-	p.storage.AddMovie(username, &movies[ind])
-
-	return p.tg.SendMessage(chatID, msgSaved)
+	return p.tg.SendPhotoWithInlineKeyboard(chatID, p.movieMessageByTitle(movies[0]), movies[0].Poster, buttons)
 }
 
 func (p *Processor) sendRandom(chatID int, username string) (err error) {
@@ -84,17 +80,22 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		return err
 	}
 
+	buttonData := fmt.Sprintf("%s;%d", watchItButton, movieID)
+	buttons := make([]telegram.InlineKeyboardButton, 2)
+	buttons[0], _ = p.makeButton("Next", getNextButton)
+	buttons[1], _ = p.makeButton("Watch it!", buttonData)
+
 	if movie.Poster.URL != "" {
-		if err = p.tg.SendPhoto(chatID, p.movieMessage(movie), movie.Poster.URL); err != nil {
+		if err = p.tg.SendPhotoWithInlineKeyboard(chatID, p.movieMessageByID(movie), movie.Poster.URL, buttons); err != nil {
 			return err
 		}
 	} else {
-		if err = p.tg.SendMessage(chatID, p.movieMessage(movie)); err != nil {
+		if err = p.tg.SendMessageWithInlineKeyboard(chatID, p.movieMessageByID(movie), buttons); err != nil {
 			return err
 		}
 	}
 
-	return p.storage.Remove(username, movieID)
+	return nil
 }
 
 func (p *Processor) sendHelp(chatID int) error {
