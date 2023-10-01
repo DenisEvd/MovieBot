@@ -70,7 +70,7 @@ func (p *Postgres) DeleteRequest(id int) (string, error) {
 }
 
 func (p *Postgres) PickRandom(username string) (int, error) {
-	query := fmt.Sprintf("SELECT movie_id FROM %s r WHERE r.username=$1 LIMIT 1", recordsTable)
+	query := fmt.Sprintf("SELECT movie_id FROM %s r WHERE r.username=$1 ORDER BY random() LIMIT 1", recordsTable)
 
 	var movieID int
 	err := p.db.QueryRow(query, username).Scan(&movieID)

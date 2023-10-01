@@ -45,18 +45,24 @@ func (p *Processor) suggestMovie(text string, chatID int) error {
 
 	sort.Slice(movies, func(i, j int) bool { return movies[i].Rating > movies[j].Rating })
 
-	id, err := p.storage.AddRequest(text)
+	requestID, err := p.storage.AddRequest(text)
 	if err != nil {
 		return errors.Wrap(err, "saving request")
 	}
 
-	buttonDataNo := fmt.Sprintf("%s;%d", findMoreButton, id)
-	buttonDataYes := fmt.Sprintf("%s;%d", saveButton, movies[0].ID)
+	buttonDataNo := fmt.Sprintf("%s;%d", findMoreButton, requestID)
+	buttonDataYes := fmt.Sprintf("%s;%d;%d", saveButton, movies[0].ID, requestID)
 	buttons := make([]telegram.InlineKeyboardButton, 2)
 	buttons[0], _ = p.makeButton("No", buttonDataNo)
 	buttons[1], _ = p.makeButton("Yes", buttonDataYes)
 
-	return p.tg.SendPhotoWithInlineKeyboard(chatID, p.movieMessageByTitle(movies[0]), movies[0].Poster, buttons)
+	messageText := p.movieMessageByTitle(movies[0])
+
+	if movies[0].Poster == "" {
+		return p.tg.SendMessageWithInlineKeyboard(chatID, messageText, buttons)
+	}
+
+	return p.tg.SendPhotoWithInlineKeyboard(chatID, messageText, movies[0].Poster, buttons)
 }
 
 func (p *Processor) sendRandom(chatID int, username string) (err error) {
