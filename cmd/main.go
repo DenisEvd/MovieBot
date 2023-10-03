@@ -5,7 +5,7 @@ import (
 	telegramClient "MovieBot/internal/pkg/clients/telegram"
 	eventConsumer "MovieBot/internal/pkg/consumer/event-consumer"
 	"MovieBot/internal/pkg/events/telegram"
-	postgresql "MovieBot/internal/pkg/storage/postgres"
+	"MovieBot/internal/pkg/storage"
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
@@ -32,7 +32,7 @@ func main() {
 		log.Fatalf("can't read .env: %s", err.Error())
 	}
 
-	db, err := postgresql.NewPostgresDB(postgresql.Config{
+	db, err := storage.NewPostgresDB(storage.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
@@ -44,11 +44,11 @@ func main() {
 		log.Fatalf("can't sign in db: %s", err.Error())
 	}
 
-	movieApi := kinopoisk.NewKp(hostKp, os.Getenv("KINOPISK_TOKEN"))
+	movieApi := kinopoisk.NewKp(hostKp, os.Getenv("KINOPOISK_TOKEN"))
 
-	postgres := postgresql.New(db)
+	store := storage.NewStorage(db)
 
-	eventsProcessor := telegram.New(tgClient, movieApi, postgres)
+	eventsProcessor := telegram.New(tgClient, movieApi, store)
 
 	consumer := eventConsumer.New(eventsProcessor, eventsProcessor, batchSize)
 

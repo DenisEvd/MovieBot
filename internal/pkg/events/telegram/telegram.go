@@ -12,7 +12,7 @@ type Processor struct {
 	tg      *telegram.Client
 	kp      kinopoisk.MovieAPI
 	offset  int
-	storage storage.Storage
+	storage *storage.Storage
 }
 
 const (
@@ -23,7 +23,7 @@ const (
 var ErrUnknownEventType = errors.New("unknown event type")
 var ErrUnknownMetaType = errors.New("unknown meta type")
 
-func New(client *telegram.Client, movieAPI kinopoisk.MovieAPI, storage storage.Storage) *Processor {
+func New(client *telegram.Client, movieAPI kinopoisk.MovieAPI, storage *storage.Storage) *Processor {
 	return &Processor{
 		tg:      client,
 		kp:      movieAPI,
