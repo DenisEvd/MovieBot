@@ -34,7 +34,7 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 }
 
 func (p *Processor) suggestMovie(text string, chatID int) error {
-	movies, err := p.kp.FindMovieByTitle(text, 4)
+	movies, err := p.kp.FetchMoviesByTitle(text)
 	if err != nil {
 		return errors.Wrap(err, "can't take movies from API")
 	}
@@ -56,7 +56,7 @@ func (p *Processor) suggestMovie(text string, chatID int) error {
 	buttons[0], _ = p.makeButton("No", buttonDataNo)
 	buttons[1], _ = p.makeButton("Yes", buttonDataYes)
 
-	messageText := p.movieMessageByTitle(movies[0])
+	messageText := p.movieMessage(movies[0])
 
 	if movies[0].Poster == "" {
 		return p.tg.SendMessageWithInlineKeyboard(chatID, messageText, buttons)
@@ -81,7 +81,7 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		return p.tg.SendMessage(chatID, msgNoSavedMovies)
 	}
 
-	movie, err := p.kp.GetMovieByID(movieID)
+	movie, err := p.kp.FetchMovieById(movieID)
 	if err != nil {
 		return err
 	}
@@ -91,12 +91,12 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 	buttons[0], _ = p.makeButton("Next", getNextButton)
 	buttons[1], _ = p.makeButton("Watch it!", buttonData)
 
-	if movie.Poster.URL != "" {
-		if err = p.tg.SendPhotoWithInlineKeyboard(chatID, p.movieMessageByID(movie), movie.Poster.URL, buttons); err != nil {
+	if movie.Poster != "" {
+		if err = p.tg.SendPhotoWithInlineKeyboard(chatID, p.movieMessage(movie), movie.Poster, buttons); err != nil {
 			return err
 		}
 	} else {
-		if err = p.tg.SendMessageWithInlineKeyboard(chatID, p.movieMessageByID(movie), buttons); err != nil {
+		if err = p.tg.SendMessageWithInlineKeyboard(chatID, p.movieMessage(movie), buttons); err != nil {
 			return err
 		}
 	}

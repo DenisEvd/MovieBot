@@ -18,8 +18,19 @@ type CallbackMeta struct {
 	Username   string
 }
 
-func (p *Processor) Fetch(limit int) ([]events.Event, error) {
-	updates, err := p.tg.Updates(p.offset, limit)
+type Fetcher struct {
+	tg     *telegram.Client
+	offset int
+}
+
+func NewFetcher(tg *telegram.Client) *Fetcher {
+	return &Fetcher{
+		tg: tg,
+	}
+}
+
+func (f *Fetcher) Fetch(limit int) ([]events.Event, error) {
+	updates, err := f.tg.Updates(f.offset, limit)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get events")
 	}
@@ -30,15 +41,15 @@ func (p *Processor) Fetch(limit int) ([]events.Event, error) {
 
 	res := make([]events.Event, 0, len(updates))
 	for _, u := range updates {
-		res = append(res, p.event(u))
+		res = append(res, f.event(u))
 	}
 
-	p.offset = updates[len(updates)-1].ID + 1
+	f.offset = updates[len(updates)-1].ID + 1
 
 	return res, nil
 }
 
-func (p *Processor) event(upd telegram.Update) events.Event {
+func (f *Fetcher) event(upd telegram.Update) events.Event {
 	updType := fetchType(upd)
 
 	res := events.Event{

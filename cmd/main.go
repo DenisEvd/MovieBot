@@ -4,6 +4,7 @@ import (
 	"MovieBot/internal/pkg/clients/kinopoisk"
 	telegramClient "MovieBot/internal/pkg/clients/telegram"
 	eventConsumer "MovieBot/internal/pkg/consumer/event-consumer"
+	kinopoiskFetch "MovieBot/internal/pkg/events/kinopoisk"
 	"MovieBot/internal/pkg/events/telegram"
 	"MovieBot/internal/pkg/storage"
 	"flag"
@@ -48,9 +49,11 @@ func main() {
 
 	store := storage.NewStorage(db)
 
-	eventsProcessor := telegram.New(tgClient, movieApi, store)
+	movieFetcher := kinopoiskFetch.NewKpFetcher(movieApi, 4)
+	eventsFetcher := telegram.NewFetcher(tgClient)
+	eventsProcessor := telegram.NewProcessor(tgClient, movieFetcher, store)
 
-	consumer := eventConsumer.New(eventsProcessor, eventsProcessor, batchSize)
+	consumer := eventConsumer.New(eventsFetcher, eventsProcessor, batchSize)
 
 	if err := consumer.Start(); err != nil {
 		log.Fatal(err)

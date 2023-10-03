@@ -1,8 +1,8 @@
 package telegram
 
 import (
-	"MovieBot/internal/pkg/clients/kinopoisk"
 	"MovieBot/internal/pkg/clients/telegram"
+	"MovieBot/internal/pkg/events"
 	"fmt"
 	"github.com/pkg/errors"
 	"log"
@@ -75,7 +75,7 @@ func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int,
 		return err
 	}
 
-	movies, err := p.kp.FindMovieByTitle(request, 4)
+	movies, err := p.kp.FetchMoviesByTitle(request)
 
 	sort.Slice(movies, func(i, j int) bool { return movies[i].Rating > movies[j].Rating })
 
@@ -84,7 +84,7 @@ func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int,
 		return err
 	}
 
-	messageText := p.movieArrayMessageByTitle(movies)
+	messageText := p.movieArrayMessage(movies)
 
 	err = p.tg.EditMessageReplyMarkup(chatID, messageID)
 
@@ -118,7 +118,7 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 		return p.tg.SendMessage(chatID, msgAlreadyExists)
 	}
 
-	movie, err := p.kp.GetMovieByID(movieID)
+	movie, err := p.kp.FetchMovieById(movieID)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (p *Processor) watchThisMovie(callbackID string, chatID int, messageID int,
 	return p.tg.EditMessageReplyMarkup(chatID, messageID)
 }
 
-func (p *Processor) makeMoviesButtons(movies []kinopoisk.MovieByTitle) ([]telegram.InlineKeyboardButton, error) {
+func (p *Processor) makeMoviesButtons(movies []events.Movie) ([]telegram.InlineKeyboardButton, error) {
 	buttons := make([]telegram.InlineKeyboardButton, 0, len(movies)+1)
 	for i, movie := range movies {
 		buttonData := fmt.Sprintf("%s;%d", saveButton, movie.ID)

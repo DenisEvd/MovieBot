@@ -1,8 +1,8 @@
 package telegram
 
 import (
-	"MovieBot/internal/pkg/clients/kinopoisk"
 	"MovieBot/internal/pkg/clients/telegram"
+	"MovieBot/internal/pkg/events"
 	"fmt"
 	"strconv"
 	"unsafe"
@@ -20,17 +20,17 @@ const (
 	msgSorry = "Sorry =("
 )
 
-func (p *Processor) movieArrayMessageByTitle(movies []kinopoisk.MovieByTitle) string {
+func (p *Processor) movieArrayMessage(movies []events.Movie) string {
 	result := ""
 	for i, movie := range movies {
 		result += fmt.Sprintf("%d. ", i+1)
-		result += p.movieMessageByTitle(movie)
+		result += p.movieMessage(movie)
 	}
 
 	return result
 }
 
-func (p *Processor) movieMessageByTitle(movie kinopoisk.MovieByTitle) string {
+func (p *Processor) movieMessage(movie events.Movie) string {
 	result := movie.Title
 
 	if movie.Year != 0 {
@@ -51,12 +51,6 @@ func (p *Processor) movieMessageByTitle(movie kinopoisk.MovieByTitle) string {
 	}
 
 	return result
-}
-
-func (p *Processor) movieMessageByID(movie kinopoisk.MovieByID) string {
-	message := fmt.Sprintf("%s, %d\nIMDb: %.2f\nDescription:\n%s\nLength: %d minutes", movie.Title, movie.Year, movie.Rating.IMDB, movie.Description, movie.MovieLength)
-
-	return message
 }
 
 func (p *Processor) makeButton(text string, data string) (telegram.InlineKeyboardButton, error) {

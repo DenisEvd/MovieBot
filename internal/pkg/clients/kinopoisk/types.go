@@ -20,6 +20,7 @@ type MovieByTitle struct {
 }
 
 type MovieByID struct {
+	ID          int     `json:"id"`
 	Title       string  `json:"name"`
 	Year        int     `json:"year"`
 	Description string  `json:"shortDescription"`

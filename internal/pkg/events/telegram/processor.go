@@ -1,7 +1,6 @@
 package telegram
 
 import (
-	"MovieBot/internal/pkg/clients/kinopoisk"
 	"MovieBot/internal/pkg/clients/telegram"
 	"MovieBot/internal/pkg/events"
 	"MovieBot/internal/pkg/storage"
@@ -10,8 +9,7 @@ import (
 
 type Processor struct {
 	tg      *telegram.Client
-	kp      kinopoisk.MovieAPI
-	offset  int
+	kp      events.MovieFetcher
 	storage *storage.Storage
 }
 
@@ -23,10 +21,10 @@ const (
 var ErrUnknownEventType = errors.New("unknown event type")
 var ErrUnknownMetaType = errors.New("unknown meta type")
 
-func New(client *telegram.Client, movieAPI kinopoisk.MovieAPI, storage *storage.Storage) *Processor {
+func NewProcessor(client *telegram.Client, kp events.MovieFetcher, storage *storage.Storage) *Processor {
 	return &Processor{
 		tg:      client,
-		kp:      movieAPI,
+		kp:      kp,
 		storage: storage,
 	}
 }

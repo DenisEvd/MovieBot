@@ -1,6 +1,11 @@
 package events
 
-type Fetcher interface {
+type MovieFetcher interface {
+	FetchMovieById(id int) (Movie, error)
+	FetchMoviesByTitle(title string) ([]Movie, error)
+}
+
+type UpdateFetcher interface {
 	Fetch(limit int) ([]Event, error)
 }
 
@@ -23,6 +28,11 @@ type Event struct {
 }
 
 type Movie struct {
-	ID    int
-	Title string
+	ID          int
+	Title       string
+	Year        int
+	Description string
+	Poster      string
+	Rating      float32
+	Length      int
 }
