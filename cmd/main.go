@@ -8,7 +8,6 @@ import (
 	"MovieBot/internal/pkg/events/telegram"
 	"MovieBot/internal/pkg/storage"
 	"flag"
-	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"log"
@@ -26,7 +25,6 @@ func main() {
 		log.Fatalf("can't read config: %s", err.Error())
 	}
 
-	fmt.Println(os.Getenv("TG_TOKEN"))
 	tgClient := telegramClient.New(hostTg, mustToken())
 
 	if err := godotenv.Load(); err != nil {

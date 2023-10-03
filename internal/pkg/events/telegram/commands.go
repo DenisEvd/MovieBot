@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"MovieBot/internal/pkg/clients/telegram"
+	"MovieBot/internal/pkg/events/telegram/messages"
 	"MovieBot/internal/pkg/storage"
 	"fmt"
 	"github.com/pkg/errors"
@@ -40,7 +41,7 @@ func (p *Processor) suggestMovie(text string, chatID int) error {
 	}
 
 	if len(movies) == 0 {
-		return p.tg.SendMessage(chatID, msgCanNotFindMovie)
+		return p.tg.SendMessage(chatID, messages.MsgCanNotFindMovie)
 	}
 
 	sort.Slice(movies, func(i, j int) bool { return movies[i].Rating > movies[j].Rating })
@@ -53,10 +54,10 @@ func (p *Processor) suggestMovie(text string, chatID int) error {
 	buttonDataNo := fmt.Sprintf("%s;%d", findMoreButton, requestID)
 	buttonDataYes := fmt.Sprintf("%s;%d;%d", saveButton, movies[0].ID, requestID)
 	buttons := make([]telegram.InlineKeyboardButton, 2)
-	buttons[0], _ = p.makeButton("No", buttonDataNo)
-	buttons[1], _ = p.makeButton("Yes", buttonDataYes)
+	buttons[0], _ = messages.MakeButton("No", buttonDataNo)
+	buttons[1], _ = messages.MakeButton("Yes", buttonDataYes)
 
-	messageText := p.movieMessage(movies[0])
+	messageText := messages.MovieMessage(movies[0])
 
 	if movies[0].Poster == "" {
 		return p.tg.SendMessageWithInlineKeyboard(chatID, messageText, buttons)
@@ -78,7 +79,7 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 	}
 
 	if errors.Is(err, storage.ErrNoSavedMovies) {
-		return p.tg.SendMessage(chatID, msgNoSavedMovies)
+		return p.tg.SendMessage(chatID, messages.MsgNoSavedMovies)
 	}
 
 	movie, err := p.kp.FetchMovieById(movieID)
@@ -88,15 +89,15 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 
 	buttonData := fmt.Sprintf("%s;%d", watchItButton, movieID)
 	buttons := make([]telegram.InlineKeyboardButton, 2)
-	buttons[0], _ = p.makeButton("Next", getNextButton)
-	buttons[1], _ = p.makeButton("Watch it!", buttonData)
+	buttons[0], _ = messages.MakeButton("Next", getNextButton)
+	buttons[1], _ = messages.MakeButton("Watch it!", buttonData)
 
 	if movie.Poster != "" {
-		if err = p.tg.SendPhotoWithInlineKeyboard(chatID, p.movieMessage(movie), movie.Poster, buttons); err != nil {
+		if err = p.tg.SendPhotoWithInlineKeyboard(chatID, messages.MovieMessage(movie), movie.Poster, buttons); err != nil {
 			return err
 		}
 	} else {
-		if err = p.tg.SendMessageWithInlineKeyboard(chatID, p.movieMessage(movie), buttons); err != nil {
+		if err = p.tg.SendMessageWithInlineKeyboard(chatID, messages.MovieMessage(movie), buttons); err != nil {
 			return err
 		}
 	}
@@ -105,9 +106,9 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 }
 
 func (p *Processor) sendHelp(chatID int) error {
-	return p.tg.SendMessage(chatID, msgHelp)
+	return p.tg.SendMessage(chatID, messages.MsgHelp)
 }
 
 func (p *Processor) sendHello(chatID int) error {
-	return p.tg.SendMessage(chatID, msgHello)
+	return p.tg.SendMessage(chatID, messages.MsgHello)
 }

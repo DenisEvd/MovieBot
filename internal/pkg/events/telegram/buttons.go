@@ -3,6 +3,7 @@ package telegram
 import (
 	"MovieBot/internal/pkg/clients/telegram"
 	"MovieBot/internal/pkg/events"
+	"MovieBot/internal/pkg/events/telegram/messages"
 	"fmt"
 	"github.com/pkg/errors"
 	"log"
@@ -22,7 +23,6 @@ const (
 )
 
 var ErrUnknownDataType = errors.New("unknown data type")
-var ErrTooBigData = errors.New("data is bigger then 64 bytes")
 var ErrDoNotHaveRequestId = errors.New("don't have request id")
 
 func (p *Processor) doButton(callbackID string, chatID int, messageID int, data string, username string) error {
@@ -51,7 +51,7 @@ func (p *Processor) doButton(callbackID string, chatID int, messageID int, data 
 }
 
 func (p *Processor) cancelSearch(callbackID string, chatID int, messageID int) error {
-	err := p.tg.AnswerCallbackQuery(callbackID, msgSorry)
+	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgSorry)
 	if err != nil {
 		return errors.Wrap(err, "canceling search")
 	}
@@ -84,7 +84,7 @@ func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int,
 		return err
 	}
 
-	messageText := p.movieArrayMessage(movies)
+	messageText := messages.MovieArrayMessage(movies)
 
 	err = p.tg.EditMessageReplyMarkup(chatID, messageID)
 
@@ -92,7 +92,7 @@ func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int,
 }
 
 func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data string, username string, requestID string) error {
-	err := p.tg.AnswerCallbackQuery(callbackID, msgSaved)
+	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgSaved)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 	}
 
 	if isExists {
-		return p.tg.SendMessage(chatID, msgAlreadyExists)
+		return p.tg.SendMessage(chatID, messages.MsgAlreadyExists)
 	}
 
 	movie, err := p.kp.FetchMovieById(movieID)
@@ -165,13 +165,13 @@ func (p *Processor) makeMoviesButtons(movies []events.Movie) ([]telegram.InlineK
 	buttons := make([]telegram.InlineKeyboardButton, 0, len(movies)+1)
 	for i, movie := range movies {
 		buttonData := fmt.Sprintf("%s;%d", saveButton, movie.ID)
-		button, err := p.makeButton(strconv.Itoa(i+1), buttonData)
+		button, err := messages.MakeButton(strconv.Itoa(i+1), buttonData)
 		if err != nil {
 			return []telegram.InlineKeyboardButton{}, err
 		}
 		buttons = append(buttons, button)
 	}
-	cancelButton, _ := p.makeButton("Cancel", canselButton)
+	cancelButton, _ := messages.MakeButton("Cancel", canselButton)
 	buttons = append(buttons, cancelButton)
 
 	return buttons, nil
