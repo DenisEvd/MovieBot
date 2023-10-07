@@ -109,7 +109,7 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 	if err != nil {
 		return errors.Wrap(err, "can't convert id to int")
 	}
-	isExists, err := p.storage.IsExists(username, movieID)
+	isExists, err := p.storage.IsExistRecord(username, movieID)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 		return err
 	}
 
-	err = p.storage.AddMovie(username, movieID, movie.Title)
+	err = p.storage.AddMovie(username, &movie)
 	if err != nil {
 		return errors.Wrap(err, "saving movie")
 	}

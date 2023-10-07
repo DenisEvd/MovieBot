@@ -73,7 +73,7 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		}
 	}()
 
-	movieID, err := p.storage.PickRandom(username)
+	movie, err := p.storage.PickRandom(username)
 	if err != nil && !errors.Is(err, storage.ErrNoSavedMovies) {
 		return err
 	}
@@ -82,12 +82,7 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		return p.tg.SendMessage(chatID, messages.MsgNoSavedMovies)
 	}
 
-	movie, err := p.kp.FetchMovieById(movieID)
-	if err != nil {
-		return err
-	}
-
-	buttonData := fmt.Sprintf("%s;%d", watchItButton, movieID)
+	buttonData := fmt.Sprintf("%s;%d", watchItButton, movie.ID)
 	buttons := make([]telegram.InlineKeyboardButton, 2)
 	buttons[0], _ = messages.MakeButton("Next", getNextButton)
 	buttons[1], _ = messages.MakeButton("Watch it!", buttonData)

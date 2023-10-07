@@ -17,6 +17,7 @@ type Config struct {
 
 const (
 	recordsTable  = "records"
+	moviesTable   = "movies"
 	requestsTable = "requests"
 )
 

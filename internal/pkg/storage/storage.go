@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"MovieBot/internal/pkg/events"
 	"errors"
 	"github.com/jmoiron/sqlx"
 )
@@ -11,10 +12,10 @@ type Requests interface {
 }
 
 type Movies interface {
-	AddMovie(username string, movieID int, movieTitle string) error
-	PickRandom(username string) (int, error)
+	AddMovie(username string, movie *events.Movie) error
+	PickRandom(username string) (events.Movie, error)
 	Remove(username string, movieID int) error
-	IsExists(username string, movieID int) (bool, error)
+	IsExistRecord(username string, movieID int) (bool, error)
 }
 
 type Storage struct {
