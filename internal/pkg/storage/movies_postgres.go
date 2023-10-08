@@ -36,6 +36,10 @@ func (p *MoviesPostgres) GetAll(username string) ([]events.Movie, error) {
 		movies = append(movies, movie)
 	}
 
+	if len(movies) == 0 {
+		return []events.Movie{}, ErrNoSavedMovies
+	}
+
 	return movies, nil
 }
 

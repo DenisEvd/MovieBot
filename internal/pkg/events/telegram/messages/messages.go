@@ -12,11 +12,12 @@ const (
 	MsgHelp  = "There will be help message"
 	MsgHello = "Hi there! \n\n" + MsgHelp
 
-	MsgCanNotFindMovie = "I can not find this movie =("
-	MsgNoSavedMovies   = "You have no saved movies"
-	MsgSaved           = "Saved!"
-	MsgAlreadyExists   = "You have already saved this movie in your list"
-	MsgAlreadyWatched  = "You have already watched this movie"
+	MsgCanNotFindMovie  = "I can not find this movie =("
+	MsgNoSavedMovies    = "You have no saved movies"
+	MsgSaved            = "Saved!"
+	MsgAlreadyExists    = "You have already saved this movie in your list"
+	MsgAlreadyWatched   = "You have already watched this movie"
+	MsgIncorrectCommand = "Incorrect command. Try again!"
 
 	MsgSorry = "Sorry =("
 )
