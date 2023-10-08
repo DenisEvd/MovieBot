@@ -3,7 +3,6 @@ package event_consumer
 import (
 	"MovieBot/internal/pkg/events"
 	"go.uber.org/zap"
-	"log"
 	"sync"
 	"time"
 )
@@ -25,7 +24,7 @@ func New(logger *zap.Logger, fetcher events.UpdateFetcher, processor events.Proc
 }
 
 func (c *Consumer) Start() error {
-	log.Println("bot has started working")
+	c.logger.Info("bot has started working")
 	for {
 		gotEvents, err := c.fetcher.Fetch(c.batchSize)
 		if err != nil {

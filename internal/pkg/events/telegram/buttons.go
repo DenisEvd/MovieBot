@@ -6,7 +6,7 @@ import (
 	"MovieBot/internal/pkg/events/telegram/messages"
 	"fmt"
 	"github.com/pkg/errors"
-	"log"
+	"go.uber.org/zap"
 	"sort"
 	"strconv"
 	"strings"
@@ -26,7 +26,7 @@ var ErrUnknownDataType = errors.New("unknown data type")
 var ErrDoNotHaveRequestId = errors.New("don't have request id")
 
 func (p *Processor) doButton(callbackID string, chatID int, messageID int, data string, username string) error {
-	log.Printf("got new callback query from '%s'", username)
+	p.logger.Info("got new callback query", zap.String("from", username), zap.String("data", data))
 
 	parts := strings.Split(data, ";")
 

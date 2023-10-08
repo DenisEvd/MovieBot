@@ -5,9 +5,11 @@ import (
 	"MovieBot/internal/pkg/events"
 	"MovieBot/internal/pkg/storage"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 type Processor struct {
+	logger  *zap.Logger
 	tg      *telegram.Client
 	kp      events.MovieFetcher
 	storage *storage.Storage
@@ -21,8 +23,9 @@ const (
 var ErrUnknownEventType = errors.New("unknown event type")
 var ErrUnknownMetaType = errors.New("unknown meta type")
 
-func NewProcessor(client *telegram.Client, kp events.MovieFetcher, storage *storage.Storage) *Processor {
+func NewProcessor(logger *zap.Logger, client *telegram.Client, kp events.MovieFetcher, storage *storage.Storage) *Processor {
 	return &Processor{
+		logger:  logger,
 		tg:      client,
 		kp:      kp,
 		storage: storage,

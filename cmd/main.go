@@ -7,10 +7,10 @@ import (
 	kinopoiskFetch "MovieBot/internal/pkg/events/kinopoisk"
 	"MovieBot/internal/pkg/events/telegram"
 	"MovieBot/internal/pkg/storage"
-	"flag"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"log"
 	"os"
 )
 
@@ -26,8 +26,6 @@ func main() {
 	if err := initConfig(); err != nil {
 		logger.Fatal("error read config", zap.Error(err))
 	}
-
-	tgClient := telegramClient.New(hostTg, mustToken())
 
 	if err := godotenv.Load(); err != nil {
 		logger.Fatal("error read .env", zap.Error(err))
@@ -45,13 +43,15 @@ func main() {
 		logger.Fatal("error sign in db", zap.Error(err))
 	}
 
+	tgClient := telegramClient.New(hostTg, os.Getenv("TG_TOKEN"))
+
 	movieApi := kinopoisk.NewKp(hostKp, os.Getenv("KINOPOISK_TOKEN"))
 
 	store := storage.NewStorage(db)
 
 	movieFetcher := kinopoiskFetch.NewKpFetcher(movieApi, 4)
 	eventsFetcher := telegram.NewFetcher(tgClient)
-	eventsProcessor := telegram.NewProcessor(tgClient, movieFetcher, store)
+	eventsProcessor := telegram.NewProcessor(logger, tgClient, movieFetcher, store)
 
 	consumer := eventConsumer.New(logger, eventsFetcher, eventsProcessor, batchSize)
 
@@ -61,16 +61,17 @@ func main() {
 
 }
 
-func mustToken() string {
-	token := flag.String("tg-token", "", "token for access to telegram bot")
-
-	flag.Parse()
-
-	return *token
-}
-
 func initConfig() error {
 	viper.AddConfigPath("configs")
 	viper.SetConfigName("config")
 	return viper.ReadInConfig()
+}
+
+func initLogger() *zap.Logger {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		log.Fatal("error logger init")
+	}
+
+	return logger
 }

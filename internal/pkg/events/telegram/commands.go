@@ -6,7 +6,7 @@ import (
 	"MovieBot/internal/pkg/storage"
 	"fmt"
 	"github.com/pkg/errors"
-	"log"
+	"go.uber.org/zap"
 	"sort"
 	"strings"
 )
@@ -20,7 +20,7 @@ const (
 func (p *Processor) doCmd(text string, chatID int, username string) error {
 	text = strings.TrimSpace(text)
 
-	log.Printf("got new command '%s' from '%s'", text, username)
+	p.logger.Info("got new command", zap.String("text", text), zap.String("from", username))
 
 	switch text {
 	case RndCmd:
