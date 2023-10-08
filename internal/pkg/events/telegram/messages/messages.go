@@ -15,6 +15,7 @@ const (
 	MsgNoSavedMovies   = "You have no saved movies"
 	MsgSaved           = "Saved!"
 	MsgAlreadyExists   = "You have already saved this movie in your list"
+	MsgAlreadyWatched  = "You have already watched this movie"
 
 	MsgSorry = "Sorry =("
 )

@@ -14,6 +14,8 @@ type Requests interface {
 type Movies interface {
 	AddMovie(username string, movie *events.Movie) error
 	PickRandom(username string) (events.Movie, error)
+	Watch(username string, movieID int) error
+	IsWatched(username string, movieID int) (bool, error)
 	Remove(username string, movieID int) error
 	IsExistRecord(username string, movieID int) (bool, error)
 }

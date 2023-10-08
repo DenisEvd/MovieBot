@@ -21,24 +21,13 @@ func NewMoviesPostgres(db *sqlx.DB) *MoviesPostgres {
 //}
 
 func (p *MoviesPostgres) PickRandom(username string) (events.Movie, error) {
-	querySelectId := fmt.Sprintf("SELECT movie_id FROM %s r WHERE r.username=$1 ORDER BY random() LIMIT 1", recordsTable)
-
-	var movieID int
-	err := p.db.QueryRow(querySelectId, username).Scan(&movieID)
-
-	if err == sql.ErrNoRows {
-		return events.Movie{}, ErrNoSavedMovies
-	}
-
-	if err != nil {
-		return events.Movie{}, errors.Wrap(err, "can't scan title from db")
-	}
-
 	var movie events.Movie
-	querySelectMovie := fmt.Sprintf("SELECT * FROM %s WHERE movie_id=$1 LIMIT 1", moviesTable)
-	err = p.db.QueryRow(querySelectMovie, movieID).Scan(&movie.ID, &movie.Title, &movie.Year, &movie.Description, &movie.Poster, &movie.Rating, &movie.Length)
-	if err != nil {
-		return events.Movie{}, errors.Wrap(err, "select movie")
+	query := fmt.Sprintf("SELECT m.movie_id, m.title, m.year, m.description, m.poster, m.rating, m.length FROM %s r INNER JOIN %s m ON m.movie_id=r.movie_id WHERE r.username=$1 AND r.is_watched=false ORDER BY random() LIMIT 1", recordsTable, moviesTable)
+	if err := p.db.QueryRow(query, username).Scan(&movie.ID, &movie.Title, &movie.Year, &movie.Description, &movie.Poster, &movie.Rating, &movie.Length); err != nil {
+		if err == sql.ErrNoRows {
+			return events.Movie{}, ErrNoSavedMovies
+		}
+		return events.Movie{}, errors.Wrap(err, "can't select random movie")
 	}
 
 	return movie, nil
@@ -74,6 +63,28 @@ func (p *MoviesPostgres) AddMovie(username string, movie *events.Movie) error {
 	return tx.Commit()
 }
 
+func (p *MoviesPostgres) Watch(username string, movieID int) error {
+	query := fmt.Sprintf("UPDATE %s SET is_watched=true WHERE username=$1 AND movie_id=$2", recordsTable)
+
+	_, err := p.db.Exec(query, username, movieID)
+	if err != nil {
+		return errors.Wrap(err, "update record")
+	}
+
+	return nil
+}
+
+func (p *MoviesPostgres) IsWatched(username string, movieID int) (bool, error) {
+	query := fmt.Sprintf("SELECT is_watched FROM %s WHERE username=$1 AND movie_id=$2", recordsTable)
+
+	var isWatched bool
+	if err := p.db.QueryRow(query, username, movieID).Scan(&isWatched); err != nil {
+		return false, errors.Wrap(err, "getting boolean")
+	}
+
+	return isWatched, nil
+}
+
 func (p *MoviesPostgres) Remove(username string, movieID int) error {
 	query := fmt.Sprintf("DELETE FROM %s r WHERE r.username=$1 AND r.movie_id=$2", recordsTable)
 
@@ -82,7 +93,7 @@ func (p *MoviesPostgres) Remove(username string, movieID int) error {
 }
 
 func (p *MoviesPostgres) IsExistRecord(username string, movieID int) (bool, error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s r WHERE r.username=$1 AND r.movie_id=$2 LIMIT 1", recordsTable)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s r WHERE r.username=$1 AND r.movie_id=$2", recordsTable)
 
 	var count int
 	err := p.db.Get(&count, query, username, movieID)
@@ -103,11 +114,3 @@ func (p *MoviesPostgres) isExistMovie(movieID int) (bool, error) {
 
 	return count != 0, err
 }
-
-//func (p *MoviesPostgres) Watched() error {
-//	return nil
-//}
-//
-//func (p *MoviesPostgres) isWatched() (bool, error) {
-//	return true, nil
-//}

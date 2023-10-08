@@ -115,6 +115,19 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 	}
 
 	if isExists {
+		if err := p.tg.EditMessageReplyMarkup(chatID, messageID); err != nil {
+			return errors.Wrap(err, "edit message")
+		}
+
+		isWatched, err := p.storage.IsWatched(username, movieID)
+		if err != nil {
+			return errors.Wrap(err, "check is watched")
+		}
+
+		if isWatched {
+			return p.tg.SendMessage(chatID, messages.MsgAlreadyWatched)
+		}
+
 		return p.tg.SendMessage(chatID, messages.MsgAlreadyExists)
 	}
 
@@ -153,7 +166,7 @@ func (p *Processor) watchThisMovie(callbackID string, chatID int, messageID int,
 
 	id, _ := strconv.Atoi(movieID)
 
-	err = p.storage.Remove(username, id)
+	err = p.storage.Watch(username, id)
 	if err != nil {
 		return errors.Wrap(err, "removing movie")
 	}
