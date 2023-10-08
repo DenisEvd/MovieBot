@@ -5,6 +5,7 @@ import (
 	"MovieBot/internal/pkg/events"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -23,39 +24,43 @@ const (
 var ErrTooBigData = errors.New("data is bigger then 64 bytes")
 
 func MovieArrayMessage(movies []events.Movie) string {
-	result := ""
+	result := strings.Builder{}
 	for i, movie := range movies {
-		result += fmt.Sprintf("%d. ", i+1)
-		result += MovieMessage(movie)
+		inf := MovieMessage(movie)
+		if inf != "" {
+			result.WriteString(fmt.Sprintf("%d. ", i+1))
+			result.WriteString(inf)
+		}
 	}
 
-	return result
+	return result.String()
 }
 
 func MovieMessage(movie events.Movie) string {
-	result := movie.Title
-	if result == "" {
+	result := strings.Builder{}
+	result.WriteString(movie.Title)
+	if result.Len() == 0 {
 		return ""
 	}
 
 	if movie.Year != 0 {
-		result += fmt.Sprintf(", %d", movie.Year)
+		result.WriteString(fmt.Sprintf(", %d", movie.Year))
 	}
-	result += "\n"
+	result.WriteString("\n")
 
 	if movie.Rating != 0 {
-		result += fmt.Sprintf("IMDb: %.2f\n", movie.Rating)
+		result.WriteString(fmt.Sprintf("IMDb: %.2f\n", movie.Rating))
 	}
 
 	if movie.Description != "" {
-		result += fmt.Sprintf("Description:\n%s\n", movie.Description)
+		result.WriteString(fmt.Sprintf("Description:\n%s\n", movie.Description))
 	}
 
 	if movie.Length != 0 {
-		result += fmt.Sprintf("Length: %d minutes\n", movie.Length)
+		result.WriteString(fmt.Sprintf("Length: %d minutes\n", movie.Length))
 	}
 
-	return result
+	return result.String()
 }
 
 func MakeButton(text string, data string) (telegram.InlineKeyboardButton, error) {

@@ -15,6 +15,7 @@ const (
 	StartCmd = "/start"
 	HelpCmd  = "/help"
 	RndCmd   = "/rnd"
+	AllCmd   = "/all"
 )
 
 func (p *Processor) doCmd(text string, chatID int, username string) error {
@@ -29,6 +30,8 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 		return p.sendHelp(chatID)
 	case StartCmd:
 		return p.sendHello(chatID)
+	case AllCmd:
+		return p.sendAll(chatID, username)
 	default:
 		return p.suggestMovie(text, chatID)
 	}
@@ -98,6 +101,16 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 	}
 
 	return nil
+}
+
+func (p *Processor) sendAll(chatID int, username string) error {
+	movies, err := p.storage.GetAll(username)
+	if err != nil {
+		return errors.Wrap(err, "error send all")
+	}
+
+	message := messages.MovieArrayMessage(movies)
+	return p.tg.SendMessage(chatID, message)
 }
 
 func (p *Processor) sendHelp(chatID int) error {

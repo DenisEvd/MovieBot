@@ -16,9 +16,28 @@ func NewMoviesPostgres(db *sqlx.DB) *MoviesPostgres {
 	return &MoviesPostgres{db: db}
 }
 
-//func (p *MoviesPostgres) GetAllMovies(userID int) ([]entities.Movie, error) {
-//	return []entities.Movie{}, nil
-//}
+func (p *MoviesPostgres) GetAll(username string) ([]events.Movie, error) {
+	query := fmt.Sprintf("SELECT m.movie_id, m.title, m.year, m.description, m.poster, m.rating, m.length FROM %s r INNER JOIN %s m ON m.movie_id=r.movie_id WHERE r.username=$1 AND r.is_watched=false ORDER BY m.movie_id", recordsTable, moviesTable)
+
+	var movies []events.Movie
+	rows, err := p.db.Query(query, username)
+	defer func() { _ = rows.Close() }()
+	if err != nil {
+		return []events.Movie{}, errors.Wrap(err, "error get movies from db")
+	}
+
+	for rows.Next() {
+		var movie events.Movie
+		err := rows.Scan(&movie.ID, &movie.Title, &movie.Year, &movie.Description, &movie.Poster, &movie.Rating, &movie.Length)
+		if err != nil {
+			return []events.Movie{}, errors.Wrap(err, "error scan rows")
+		}
+
+		movies = append(movies, movie)
+	}
+
+	return movies, nil
+}
 
 func (p *MoviesPostgres) PickRandom(username string) (events.Movie, error) {
 	var movie events.Movie
