@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
@@ -36,7 +37,14 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	case AllCmd:
 		return p.sendAll(chatID, username)
 	case ShowCmd:
-		return p.showMovie(chatID, username, parts[1])
+		if len(parts) != 2 {
+			return p.tg.SendMessage(chatID, messages.MsgIncorrectCommand)
+		}
+		movieNum, err := strconv.Atoi(parts[1])
+		if err != nil || movieNum < 1 {
+			return p.tg.SendMessage(chatID, messages.MsgIncorrectCommand)
+		}
+		return p.showMovie(chatID, username, movieNum)
 	default:
 		return p.suggestMovie(text, chatID)
 	}
@@ -74,25 +82,17 @@ func (p *Processor) suggestMovie(text string, chatID int) error {
 	return p.tg.SendPhotoWithInlineKeyboard(chatID, messageText, movies[0].Poster, buttons)
 }
 
-func (p *Processor) showMovie(chatID int, username string, text string) error {
-	movieNum, err := strconv.Atoi(text)
-	if err != nil || movieNum < 1 {
-		p.logger.Error("error convert string to int or invalid string", zap.String("data", text))
-		return p.tg.SendMessage(chatID, messages.MsgIncorrectCommand)
+func (p *Processor) showMovie(chatID int, username string, movieNum int) error {
+	movie, err := p.storage.GetNMovie(username, movieNum)
+	if err != nil && !errors.Is(err, storage.ErrNoSavedMovies) {
+		return err
 	}
 
-	movies, err := p.storage.GetAll(username)
 	if errors.Is(err, storage.ErrNoSavedMovies) {
 		return p.tg.SendMessage(chatID, messages.MsgNoSavedMovies)
 	}
 
-	if err != nil {
-		return errors.Wrap(err, "error send all")
-	}
-
-	movie := movies[movieNum%len(movies)]
-
-	return p.sendMovie(chatID, movie)
+	return p.sendMovie(chatID, movie, movieNum)
 }
 
 func (p *Processor) sendRandom(chatID int, username string) (err error) {
@@ -102,7 +102,8 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		}
 	}()
 
-	movie, err := p.storage.PickRandom(username)
+	movieNum := rand.Int()
+	movie, err := p.storage.GetNMovie(username, movieNum)
 	if err != nil && !errors.Is(err, storage.ErrNoSavedMovies) {
 		return err
 	}
@@ -111,7 +112,7 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 		return p.tg.SendMessage(chatID, messages.MsgNoSavedMovies)
 	}
 
-	return p.sendMovie(chatID, movie)
+	return p.sendMovie(chatID, movie, movieNum)
 }
 
 func (p *Processor) sendAll(chatID int, username string) error {
@@ -137,11 +138,12 @@ func (p *Processor) sendHello(chatID int) error {
 	return p.tg.SendMessage(chatID, messages.MsgHello)
 }
 
-func (p *Processor) sendMovie(chatID int, movie events.Movie) error {
-	buttonData := fmt.Sprintf("%s;%d", watchItButton, movie.ID)
+func (p *Processor) sendMovie(chatID int, movie events.Movie, n int) error {
+	buttonNextData := fmt.Sprintf("%s;%d", getNextButton, n)
+	buttonWatchData := fmt.Sprintf("%s;%d", watchItButton, movie.ID)
 	buttons := make([]telegram.InlineKeyboardButton, 2)
-	buttons[0], _ = messages.MakeButton("Next", getNextButton)
-	buttons[1], _ = messages.MakeButton("Watch it!", buttonData)
+	buttons[0], _ = messages.MakeButton("Next", buttonNextData)
+	buttons[1], _ = messages.MakeButton("Watch it!", buttonWatchData)
 
 	if movie.Poster != "" {
 		if err := p.tg.SendPhotoWithInlineKeyboard(chatID, messages.MovieMessage(movie), movie.Poster, buttons); err != nil {

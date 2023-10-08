@@ -42,7 +42,7 @@ func (p *Processor) doButton(callbackID string, chatID int, messageID int, data 
 		}
 		return p.saveMovie(callbackID, chatID, messageID, parts[1], username, requestID)
 	case getNextButton:
-		return p.showNextMovie(callbackID, chatID, messageID, username)
+		return p.showNextMovie(callbackID, chatID, messageID, username, parts[1])
 	case watchItButton:
 		return p.watchThisMovie(callbackID, chatID, messageID, username, parts[1])
 	default:
@@ -144,7 +144,7 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 	return p.tg.EditMessageReplyMarkup(chatID, messageID)
 }
 
-func (p *Processor) showNextMovie(callbackID string, chatID int, messageID int, username string) error {
+func (p *Processor) showNextMovie(callbackID string, chatID int, messageID int, username string, n string) error {
 	err := p.tg.AnswerCallbackQuery(callbackID, "Ok!")
 	if err != nil {
 		return err
@@ -155,7 +155,12 @@ func (p *Processor) showNextMovie(callbackID string, chatID int, messageID int, 
 		return err
 	}
 
-	return p.sendRandom(chatID, username)
+	movieNum, err := strconv.Atoi(n)
+	if err != nil {
+		return err
+	}
+
+	return p.showMovie(chatID, username, movieNum+1)
 }
 
 func (p *Processor) watchThisMovie(callbackID string, chatID int, messageID int, username string, movieID string) error {

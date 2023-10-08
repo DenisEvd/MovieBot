@@ -2,7 +2,6 @@ package storage
 
 import (
 	"MovieBot/internal/pkg/events"
-	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -43,14 +42,21 @@ func (p *MoviesPostgres) GetAll(username string) ([]events.Movie, error) {
 	return movies, nil
 }
 
-func (p *MoviesPostgres) PickRandom(username string) (events.Movie, error) {
+func (p *MoviesPostgres) GetNMovie(username string, n int) (events.Movie, error) {
+	var count int
+	querySelectCount := fmt.Sprintf("SELECT COUNT(*) FROM %s r WHERE r.username=$1 AND r.is_watched=false", recordsTable)
+	if err := p.db.QueryRow(querySelectCount, username).Scan(&count); err != nil {
+		return events.Movie{}, errors.Wrap(err, "error getting count")
+	}
+
+	if count == 0 {
+		return events.Movie{}, ErrNoSavedMovies
+	}
+
 	var movie events.Movie
-	query := fmt.Sprintf("SELECT m.movie_id, m.title, m.year, m.description, m.poster, m.rating, m.length FROM %s r INNER JOIN %s m ON m.movie_id=r.movie_id WHERE r.username=$1 AND r.is_watched=false ORDER BY random() LIMIT 1", recordsTable, moviesTable)
-	if err := p.db.QueryRow(query, username).Scan(&movie.ID, &movie.Title, &movie.Year, &movie.Description, &movie.Poster, &movie.Rating, &movie.Length); err != nil {
-		if err == sql.ErrNoRows {
-			return events.Movie{}, ErrNoSavedMovies
-		}
-		return events.Movie{}, errors.Wrap(err, "can't select random movie")
+	querySelectMovie := fmt.Sprintf("SELECT m.movie_id, m.title, m.year, m.description, m.poster, m.rating, m.length FROM %s r INNER JOIN %s m ON m.movie_id=r.movie_id WHERE r.username=$1 AND r.is_watched=false ORDER BY m.movie_id LIMIT 1 OFFSET $2", recordsTable, moviesTable)
+	if err := p.db.QueryRow(querySelectMovie, username, (n-1)%count).Scan(&movie.ID, &movie.Title, &movie.Year, &movie.Description, &movie.Poster, &movie.Rating, &movie.Length); err != nil {
+		return events.Movie{}, errors.Wrap(err, "can't select n movie")
 	}
 
 	return movie, nil
