@@ -10,7 +10,7 @@ import (
 	"flag"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
-	"log"
+	"go.uber.org/zap"
 	"os"
 )
 
@@ -21,14 +21,16 @@ const (
 )
 
 func main() {
+	logger := initLogger()
+
 	if err := initConfig(); err != nil {
-		log.Fatalf("can't read config: %s", err.Error())
+		logger.Fatal("error read config", zap.Error(err))
 	}
 
 	tgClient := telegramClient.New(hostTg, mustToken())
 
 	if err := godotenv.Load(); err != nil {
-		log.Fatalf("can't read .env: %s", err.Error())
+		logger.Fatal("error read .env", zap.Error(err))
 	}
 
 	db, err := storage.NewPostgresDB(storage.Config{
@@ -40,7 +42,7 @@ func main() {
 		SSLMode:  viper.GetString("db.sslmode"),
 	})
 	if err != nil {
-		log.Fatalf("can't sign in db: %s", err.Error())
+		logger.Fatal("error sign in db", zap.Error(err))
 	}
 
 	movieApi := kinopoisk.NewKp(hostKp, os.Getenv("KINOPOISK_TOKEN"))
@@ -51,10 +53,10 @@ func main() {
 	eventsFetcher := telegram.NewFetcher(tgClient)
 	eventsProcessor := telegram.NewProcessor(tgClient, movieFetcher, store)
 
-	consumer := eventConsumer.New(eventsFetcher, eventsProcessor, batchSize)
+	consumer := eventConsumer.New(logger, eventsFetcher, eventsProcessor, batchSize)
 
 	if err := consumer.Start(); err != nil {
-		log.Fatal(err)
+		logger.Fatal("error starting consumer", zap.Error(err))
 	}
 
 }
