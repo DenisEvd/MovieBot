@@ -4,10 +4,11 @@ import (
 	"MovieBot/internal/clients/kinopoisk"
 	telegramClient "MovieBot/internal/clients/telegram"
 	eventConsumer "MovieBot/internal/consumer/event-consumer"
-	kinopoiskFetch "MovieBot/internal/events/kinopoisk"
-	telegram2 "MovieBot/internal/events/telegram"
+	"MovieBot/internal/events/movie_fetcher"
+	"MovieBot/internal/events/processor"
+	"MovieBot/internal/events/tg_fetcher"
 	"MovieBot/internal/logger"
-	storage2 "MovieBot/internal/storage"
+	"MovieBot/internal/storage"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -29,7 +30,7 @@ func main() {
 		logger.Fatal("error read .env", zap.Error(err))
 	}
 
-	db, err := storage2.NewPostgresDB(storage2.Config{
+	db, err := storage.NewPostgresDB(storage.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
@@ -45,11 +46,11 @@ func main() {
 
 	movieApi := kinopoisk.NewKp(hostKp, os.Getenv("KINOPOISK_TOKEN"))
 
-	store := storage2.NewStorage(db)
+	store := storage.NewStorage(db)
 
-	movieFetcher := kinopoiskFetch.NewKpFetcher(movieApi, 4)
-	eventsFetcher := telegram2.NewFetcher(tgClient)
-	eventsProcessor := telegram2.NewProcessor(tgClient, movieFetcher, store)
+	movieFetcher := movie_fetcher.NewKpFetcher(movieApi, 4)
+	eventsFetcher := tg_fetcher.NewFetcher(tgClient)
+	eventsProcessor := processor.NewTgProcessor(tgClient, movieFetcher, store)
 
 	consumer := eventConsumer.New(eventsFetcher, eventsProcessor, batchSize)
 

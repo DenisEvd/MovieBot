@@ -1,9 +1,9 @@
-package telegram
+package processor
 
 import (
 	"MovieBot/internal/clients/telegram"
 	"MovieBot/internal/events"
-	"MovieBot/internal/events/telegram/messages"
+	"MovieBot/internal/events/processor/messages"
 	"MovieBot/internal/logger"
 	"MovieBot/internal/storage"
 	"fmt"
@@ -23,7 +23,7 @@ const (
 	ShowCmd  = "/show"
 )
 
-func (p *Processor) doCmd(text string, chatID int, username string) error {
+func (p *TgProcessor) doCmd(text string, chatID int, username string) error {
 	logger.Info("got new command", zap.String("text", text), zap.String("from", username))
 	text = strings.TrimSpace(text)
 	parts := strings.Split(text, " ")
@@ -51,7 +51,7 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	}
 }
 
-func (p *Processor) suggestMovie(text string, chatID int) error {
+func (p *TgProcessor) suggestMovie(text string, chatID int) error {
 	movies, err := p.kp.FetchMoviesByTitle(text)
 	if err != nil {
 		return errors.Wrap(err, "can't take movies from API")
@@ -83,7 +83,7 @@ func (p *Processor) suggestMovie(text string, chatID int) error {
 	return p.tg.SendPhotoWithInlineKeyboard(chatID, messageText, movies[0].Poster, buttons)
 }
 
-func (p *Processor) sendRandom(chatID int, username string) (err error) {
+func (p *TgProcessor) sendRandom(chatID int, username string) (err error) {
 	defer func() {
 		if err != nil {
 			err = errors.Wrap(err, "can't do command: send random")
@@ -103,7 +103,7 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 	return p.sendMovie(chatID, movie, movieNum)
 }
 
-func (p *Processor) sendAll(chatID int, username string) error {
+func (p *TgProcessor) sendAll(chatID int, username string) error {
 	movies, err := p.storage.GetAll(username)
 
 	if errors.Is(err, storage.ErrNoSavedMovies) {
@@ -115,18 +115,18 @@ func (p *Processor) sendAll(chatID int, username string) error {
 	}
 
 	message := messages.MovieArrayMessage(movies)
-	return p.tg.SendMessage(chatID, message)
+	return p.tg.SendMessage(chatID, "Your movies list:\n"+message)
 }
 
-func (p *Processor) sendHelp(chatID int) error {
+func (p *TgProcessor) sendHelp(chatID int) error {
 	return p.tg.SendMessage(chatID, messages.MsgHelp)
 }
 
-func (p *Processor) sendHello(chatID int) error {
+func (p *TgProcessor) sendHello(chatID int) error {
 	return p.tg.SendMessage(chatID, messages.MsgHello)
 }
 
-func (p *Processor) showMovie(chatID int, username string, movieNum int) error {
+func (p *TgProcessor) showMovie(chatID int, username string, movieNum int) error {
 	movie, err := p.storage.GetNMovie(username, movieNum)
 	if err != nil && !errors.Is(err, storage.ErrNoSavedMovies) {
 		return err
@@ -139,7 +139,7 @@ func (p *Processor) showMovie(chatID int, username string, movieNum int) error {
 	return p.sendMovie(chatID, movie, movieNum)
 }
 
-func (p *Processor) sendMovie(chatID int, movie events.Movie, n int) error {
+func (p *TgProcessor) sendMovie(chatID int, movie events.Movie, n int) error {
 	buttonNextData := fmt.Sprintf("%s;%d", getNextButton, n)
 	buttonWatchData := fmt.Sprintf("%s;%d", watchItButton, movie.ID)
 	buttons := make([]telegram.InlineKeyboardButton, 3)

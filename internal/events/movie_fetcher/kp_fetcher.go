@@ -1,4 +1,4 @@
-package kinopoisk
+package movie_fetcher
 
 import (
 	"MovieBot/internal/clients/kinopoisk"

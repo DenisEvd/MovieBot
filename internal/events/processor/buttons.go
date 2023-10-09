@@ -1,9 +1,9 @@
-package telegram
+package processor
 
 import (
 	"MovieBot/internal/clients/telegram"
 	"MovieBot/internal/events"
-	"MovieBot/internal/events/telegram/messages"
+	"MovieBot/internal/events/processor/messages"
 	"MovieBot/internal/logger"
 	"MovieBot/internal/storage"
 	"fmt"
@@ -27,7 +27,7 @@ const (
 var ErrUnknownDataType = errors.New("unknown data type")
 var ErrDoNotHaveRequestId = errors.New("don't have request id")
 
-func (p *Processor) doButton(callbackID string, chatID int, messageID int, data string, username string) error {
+func (p *TgProcessor) doButton(callbackID string, chatID int, messageID int, data string, username string) error {
 	logger.Info("got new callback query", zap.String("from", username), zap.String("data", data))
 
 	parts := strings.Split(data, ";")
@@ -52,7 +52,7 @@ func (p *Processor) doButton(callbackID string, chatID int, messageID int, data 
 	}
 }
 
-func (p *Processor) cancelSearch(callbackID string, chatID int, messageID int) error {
+func (p *TgProcessor) cancelSearch(callbackID string, chatID int, messageID int) error {
 	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgOkay)
 	if err != nil {
 		return errors.Wrap(err, "canceling search")
@@ -61,7 +61,7 @@ func (p *Processor) cancelSearch(callbackID string, chatID int, messageID int) e
 	return p.editMessage(chatID, messageID)
 }
 
-func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int, requestID string) error {
+func (p *TgProcessor) showMoreMovies(callbackID string, chatID int, messageID int, requestID string) error {
 	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgOkay)
 	if err != nil {
 		return err
@@ -100,10 +100,10 @@ func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int,
 		return errors.Wrap(err, "error show more movies")
 	}
 
-	return p.tg.SendMessageWithInlineKeyboard(chatID, messageText, buttons)
+	return p.tg.SendMessageWithInlineKeyboard(chatID, "Which one?\n"+messageText, buttons)
 }
 
-func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data string, username string, requestID string) error {
+func (p *TgProcessor) saveMovie(callbackID string, chatID int, messageID int, data string, username string, requestID string) error {
 	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgSaved)
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 	return p.editMessage(chatID, messageID)
 }
 
-func (p *Processor) showNextMovie(callbackID string, chatID int, messageID int, username string, n string) error {
+func (p *TgProcessor) showNextMovie(callbackID string, chatID int, messageID int, username string, n string) error {
 	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgOkay)
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func (p *Processor) showNextMovie(callbackID string, chatID int, messageID int, 
 	return p.showMovie(chatID, username, movieNum+1)
 }
 
-func (p *Processor) watchThisMovie(callbackID string, chatID int, messageID int, username string, movieID string) error {
+func (p *TgProcessor) watchThisMovie(callbackID string, chatID int, messageID int, username string, movieID string) error {
 	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgEnjoyWatching)
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func (p *Processor) watchThisMovie(callbackID string, chatID int, messageID int,
 	return p.tg.EditMessageReplyMarkup(chatID, messageID)
 }
 
-func (p *Processor) editMessage(chatID int, messageID int) error {
+func (p *TgProcessor) editMessage(chatID int, messageID int) error {
 	success, err := p.tg.DeleteMessage(chatID, messageID)
 	if err != nil {
 		return errors.Wrap(err, "error showing more movies")
@@ -206,7 +206,7 @@ func (p *Processor) editMessage(chatID int, messageID int) error {
 	return nil
 }
 
-func (p *Processor) makeMoviesButtons(movies []events.Movie) ([]telegram.InlineKeyboardButton, error) {
+func (p *TgProcessor) makeMoviesButtons(movies []events.Movie) ([]telegram.InlineKeyboardButton, error) {
 	buttons := make([]telegram.InlineKeyboardButton, 0, len(movies)+1)
 	for i, movie := range movies {
 		buttonData := fmt.Sprintf("%s;%d", saveButton, movie.ID)

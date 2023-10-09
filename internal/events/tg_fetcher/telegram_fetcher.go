@@ -1,4 +1,4 @@
-package telegram
+package tg_fetcher
 
 import (
 	telegram2 "MovieBot/internal/clients/telegram"

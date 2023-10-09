@@ -1,18 +1,5 @@
 package events
 
-type MovieFetcher interface {
-	FetchMovieById(id int) (Movie, error)
-	FetchMoviesByTitle(title string) ([]Movie, error)
-}
-
-type UpdateFetcher interface {
-	Fetch(limit int) ([]Event, error)
-}
-
-type Processor interface {
-	Process(e Event) error
-}
-
 type Type int
 
 const (

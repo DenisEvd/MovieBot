@@ -1,15 +1,17 @@
-package telegram
+package processor
 
 import (
 	"MovieBot/internal/clients/telegram"
 	"MovieBot/internal/events"
+	"MovieBot/internal/events/movie_fetcher"
+	"MovieBot/internal/events/tg_fetcher"
 	"MovieBot/internal/storage"
 	"github.com/pkg/errors"
 )
 
-type Processor struct {
+type TgProcessor struct {
 	tg      *telegram.Client
-	kp      events.MovieFetcher
+	kp      movie_fetcher.MovieFetcher
 	storage *storage.Storage
 }
 
@@ -21,15 +23,15 @@ const (
 var ErrUnknownEventType = errors.New("unknown event type")
 var ErrUnknownMetaType = errors.New("unknown meta type")
 
-func NewProcessor(client *telegram.Client, kp events.MovieFetcher, storage *storage.Storage) *Processor {
-	return &Processor{
+func NewTgProcessor(client *telegram.Client, kp movie_fetcher.MovieFetcher, storage *storage.Storage) *TgProcessor {
+	return &TgProcessor{
 		tg:      client,
 		kp:      kp,
 		storage: storage,
 	}
 }
 
-func (p *Processor) Process(event events.Event) error {
+func (p *TgProcessor) Process(event events.Event) error {
 	switch event.Type {
 	case events.Message:
 		return p.processMessage(event)
@@ -40,7 +42,7 @@ func (p *Processor) Process(event events.Event) error {
 	}
 }
 
-func (p *Processor) processMessage(event events.Event) error {
+func (p *TgProcessor) processMessage(event events.Event) error {
 	meta, err := messageMeta(event)
 	if err != nil {
 		return errors.Wrap(err, processingMsgError)
@@ -53,7 +55,7 @@ func (p *Processor) processMessage(event events.Event) error {
 	return nil
 }
 
-func (p *Processor) processCallback(event events.Event) error {
+func (p *TgProcessor) processCallback(event events.Event) error {
 	meta, err := callbackMeta(event)
 	if err != nil {
 		return errors.Wrap(err, processingCallbackError)
@@ -66,19 +68,19 @@ func (p *Processor) processCallback(event events.Event) error {
 	return nil
 }
 
-func messageMeta(event events.Event) (MessageMeta, error) {
-	res, ok := event.Meta.(MessageMeta)
+func messageMeta(event events.Event) (tg_fetcher.MessageMeta, error) {
+	res, ok := event.Meta.(tg_fetcher.MessageMeta)
 	if !ok {
-		return MessageMeta{}, errors.Wrap(ErrUnknownMetaType, "can't get meta")
+		return tg_fetcher.MessageMeta{}, errors.Wrap(ErrUnknownMetaType, "can't get meta")
 	}
 
 	return res, nil
 }
 
-func callbackMeta(event events.Event) (CallbackMeta, error) {
-	res, ok := event.Meta.(CallbackMeta)
+func callbackMeta(event events.Event) (tg_fetcher.CallbackMeta, error) {
+	res, ok := event.Meta.(tg_fetcher.CallbackMeta)
 	if !ok {
-		return CallbackMeta{}, errors.Wrap(ErrUnknownMetaType, "can't get meta")
+		return tg_fetcher.CallbackMeta{}, errors.Wrap(ErrUnknownMetaType, "can't get meta")
 	}
 
 	return res, nil

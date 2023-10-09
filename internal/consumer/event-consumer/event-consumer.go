@@ -2,6 +2,8 @@ package event_consumer
 
 import (
 	"MovieBot/internal/events"
+	"MovieBot/internal/events/processor"
+	"MovieBot/internal/events/tg_fetcher"
 	"MovieBot/internal/logger"
 	"go.uber.org/zap"
 	"sync"
@@ -9,12 +11,12 @@ import (
 )
 
 type Consumer struct {
-	fetcher   events.UpdateFetcher
-	processor events.Processor
+	fetcher   tg_fetcher.UpdateFetcher
+	processor processor.Processor
 	batchSize int
 }
 
-func New(fetcher events.UpdateFetcher, processor events.Processor, batchSize int) *Consumer {
+func New(fetcher tg_fetcher.UpdateFetcher, processor processor.Processor, batchSize int) *Consumer {
 	return &Consumer{
 		fetcher:   fetcher,
 		processor: processor,
@@ -24,6 +26,7 @@ func New(fetcher events.UpdateFetcher, processor events.Processor, batchSize int
 
 func (c *Consumer) Start() error {
 	logger.Info("bot has started working")
+
 	for {
 		gotEvents, err := c.fetcher.Fetch(c.batchSize)
 		if err != nil {
@@ -32,7 +35,7 @@ func (c *Consumer) Start() error {
 		}
 
 		if len(gotEvents) == 0 {
-			time.Sleep(1 * time.Second)
+			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
