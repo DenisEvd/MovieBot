@@ -9,14 +9,14 @@ import (
 )
 
 const (
-	MsgHelp  = "There will be help message"
+	MsgHelp  = "You can use the following commands: \n/help - information about commands\n/rnd - get random movie from your list\n/all - get all your movies from list\n/show n - get n-th movie\nYou just need to send the title of the movie if you want to save it!"
 	MsgHello = "Hi there! \n\n" + MsgHelp
 
 	MsgCanNotFindMovie  = "I can not find this movie =("
-	MsgNoSavedMovies    = "You have no saved movies"
+	MsgNoSavedMovies    = "You have no saved movies yet("
 	MsgSaved            = "Saved!"
-	MsgAlreadyExists    = "You have already saved this movie in your list"
-	MsgAlreadyWatched   = "You have already watched this movie"
+	MsgAlreadyExists    = "You have already saved this movie in your list!"
+	MsgAlreadyWatched   = "You have already watched this movie!"
 	MsgIncorrectCommand = "Incorrect command. Try again!"
 	MsgTryAgain         = "Sorry I have a problem =( Try again!"
 
