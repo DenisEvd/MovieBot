@@ -5,6 +5,7 @@ import (
 	"MovieBot/internal/events"
 	"MovieBot/internal/events/telegram/messages"
 	"MovieBot/internal/logger"
+	"MovieBot/internal/storage"
 	"fmt"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -52,16 +53,16 @@ func (p *Processor) doButton(callbackID string, chatID int, messageID int, data 
 }
 
 func (p *Processor) cancelSearch(callbackID string, chatID int, messageID int) error {
-	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgSorry)
+	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgOkay)
 	if err != nil {
 		return errors.Wrap(err, "canceling search")
 	}
 
-	return p.tg.EditMessageReplyMarkup(chatID, messageID)
+	return p.editMessage(chatID, messageID)
 }
 
 func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int, requestID string) error {
-	err := p.tg.AnswerCallbackQuery(callbackID, "Ok!")
+	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgOkay)
 	if err != nil {
 		return err
 	}
@@ -72,6 +73,14 @@ func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int,
 	}
 	id, _ := strconv.Atoi(requestID)
 	request, err = p.storage.DeleteRequest(id)
+	if errors.Is(err, storage.ErrNoRequest) {
+		if err = p.editMessage(chatID, messageID); err != nil {
+			return errors.Wrap(err, "error show more movies")
+		}
+
+		return p.tg.SendMessage(chatID, messages.MsgTryAgain)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -87,7 +96,9 @@ func (p *Processor) showMoreMovies(callbackID string, chatID int, messageID int,
 
 	messageText := messages.MovieArrayMessage(movies)
 
-	err = p.tg.EditMessageReplyMarkup(chatID, messageID)
+	if err := p.editMessage(chatID, messageID); err != nil {
+		return errors.Wrap(err, "error show more movies")
+	}
 
 	return p.tg.SendMessageWithInlineKeyboard(chatID, messageText, buttons)
 }
@@ -116,7 +127,7 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 	}
 
 	if isExists {
-		if err := p.tg.EditMessageReplyMarkup(chatID, messageID); err != nil {
+		if err := p.editMessage(chatID, messageID); err != nil {
 			return errors.Wrap(err, "edit message")
 		}
 
@@ -142,16 +153,16 @@ func (p *Processor) saveMovie(callbackID string, chatID int, messageID int, data
 		return errors.Wrap(err, "saving movie")
 	}
 
-	return p.tg.EditMessageReplyMarkup(chatID, messageID)
+	return p.editMessage(chatID, messageID)
 }
 
 func (p *Processor) showNextMovie(callbackID string, chatID int, messageID int, username string, n string) error {
-	err := p.tg.AnswerCallbackQuery(callbackID, "Ok!")
+	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgOkay)
 	if err != nil {
 		return err
 	}
 
-	err = p.tg.DeleteMessage(chatID, messageID)
+	err = p.editMessage(chatID, messageID)
 	if err != nil {
 		return err
 	}
@@ -165,7 +176,7 @@ func (p *Processor) showNextMovie(callbackID string, chatID int, messageID int, 
 }
 
 func (p *Processor) watchThisMovie(callbackID string, chatID int, messageID int, username string, movieID string) error {
-	err := p.tg.AnswerCallbackQuery(callbackID, "Enjoy!")
+	err := p.tg.AnswerCallbackQuery(callbackID, messages.MsgEnjoyWatching)
 	if err != nil {
 		return err
 	}
@@ -178,6 +189,21 @@ func (p *Processor) watchThisMovie(callbackID string, chatID int, messageID int,
 	}
 
 	return p.tg.EditMessageReplyMarkup(chatID, messageID)
+}
+
+func (p *Processor) editMessage(chatID int, messageID int) error {
+	success, err := p.tg.DeleteMessage(chatID, messageID)
+	if err != nil {
+		return errors.Wrap(err, "error showing more movies")
+	}
+
+	if !success {
+		if err := p.tg.EditMessageReplyMarkup(chatID, messageID); err != nil {
+			return errors.Wrap(err, "error showing more movies")
+		}
+	}
+
+	return nil
 }
 
 func (p *Processor) makeMoviesButtons(movies []events.Movie) ([]telegram.InlineKeyboardButton, error) {

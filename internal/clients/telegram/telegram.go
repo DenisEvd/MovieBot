@@ -124,17 +124,22 @@ func (c *Client) EditMessageReplyMarkup(chatID int, messageID int) error {
 	return nil
 }
 
-func (c *Client) DeleteMessage(chatID int, messageID int) error {
+func (c *Client) DeleteMessage(chatID int, messageID int) (bool, error) {
 	q := url.Values{}
 	q.Add("chat_id", strconv.Itoa(chatID))
 	q.Add("message_id", strconv.Itoa(messageID))
 
-	_, err := c.doQuery(deleteMessageMethod, q)
+	data, err := c.doQuery(deleteMessageMethod, q)
 	if err != nil {
-		return errors.Wrap(err, "can't delete message")
+		return false, errors.Wrap(err, "error delete message")
 	}
 
-	return nil
+	var success DeleteResponse
+	if err := json.Unmarshal(data, &success); err != nil {
+		return false, errors.Wrap(err, "error delete message")
+	}
+
+	return success.Result, nil
 }
 
 func (c *Client) AnswerCallbackQuery(queryID string, text string) error {

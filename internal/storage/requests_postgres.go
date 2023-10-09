@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 type RequestsPostgres struct {
@@ -34,6 +36,9 @@ func (p *RequestsPostgres) DeleteRequest(id int) (string, error) {
 	row := tx.QueryRow(queryGet, id)
 	if err := row.Scan(&request); err != nil {
 		_ = tx.Rollback()
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrNoRequest
+		}
 		return "", err
 	}
 

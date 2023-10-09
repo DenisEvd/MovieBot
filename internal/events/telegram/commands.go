@@ -83,19 +83,6 @@ func (p *Processor) suggestMovie(text string, chatID int) error {
 	return p.tg.SendPhotoWithInlineKeyboard(chatID, messageText, movies[0].Poster, buttons)
 }
 
-func (p *Processor) showMovie(chatID int, username string, movieNum int) error {
-	movie, err := p.storage.GetNMovie(username, movieNum)
-	if err != nil && !errors.Is(err, storage.ErrNoSavedMovies) {
-		return err
-	}
-
-	if errors.Is(err, storage.ErrNoSavedMovies) {
-		return p.tg.SendMessage(chatID, messages.MsgNoSavedMovies)
-	}
-
-	return p.sendMovie(chatID, movie, movieNum)
-}
-
 func (p *Processor) sendRandom(chatID int, username string) (err error) {
 	defer func() {
 		if err != nil {
@@ -139,12 +126,26 @@ func (p *Processor) sendHello(chatID int) error {
 	return p.tg.SendMessage(chatID, messages.MsgHello)
 }
 
+func (p *Processor) showMovie(chatID int, username string, movieNum int) error {
+	movie, err := p.storage.GetNMovie(username, movieNum)
+	if err != nil && !errors.Is(err, storage.ErrNoSavedMovies) {
+		return err
+	}
+
+	if errors.Is(err, storage.ErrNoSavedMovies) {
+		return p.tg.SendMessage(chatID, messages.MsgNoSavedMovies)
+	}
+
+	return p.sendMovie(chatID, movie, movieNum)
+}
+
 func (p *Processor) sendMovie(chatID int, movie events.Movie, n int) error {
 	buttonNextData := fmt.Sprintf("%s;%d", getNextButton, n)
 	buttonWatchData := fmt.Sprintf("%s;%d", watchItButton, movie.ID)
-	buttons := make([]telegram.InlineKeyboardButton, 2)
+	buttons := make([]telegram.InlineKeyboardButton, 3)
 	buttons[0], _ = messages.MakeButton("Next", buttonNextData)
 	buttons[1], _ = messages.MakeButton("Watch it!", buttonWatchData)
+	buttons[2], _ = messages.MakeButton("Cancel", canselButton)
 
 	if movie.Poster != "" {
 		if err := p.tg.SendPhotoWithInlineKeyboard(chatID, messages.MovieMessage(movie), movie.Poster, buttons); err != nil {

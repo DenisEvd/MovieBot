@@ -18,8 +18,10 @@ const (
 	MsgAlreadyExists    = "You have already saved this movie in your list"
 	MsgAlreadyWatched   = "You have already watched this movie"
 	MsgIncorrectCommand = "Incorrect command. Try again!"
+	MsgTryAgain         = "Sorry I have a problem =( Try again!"
 
-	MsgSorry = "Sorry =("
+	MsgEnjoyWatching = "Enjoy!"
+	MsgOkay          = "Okay!"
 )
 
 var ErrTooBigData = errors.New("data is bigger then 64 bytes")

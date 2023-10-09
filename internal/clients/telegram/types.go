@@ -18,6 +18,10 @@ type IncomingMessage struct {
 	Chat Chat   `json:"chat"`
 }
 
+type DeleteResponse struct {
+	Result bool `json:"result"`
+}
+
 type From struct {
 	Username string `json:"username"`
 }

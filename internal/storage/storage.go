@@ -34,3 +34,4 @@ func NewStorage(db *sqlx.DB) *Storage {
 }
 
 var ErrNoSavedMovies = errors.New("no saved movies")
+var ErrNoRequest = errors.New("no saved request")
