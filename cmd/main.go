@@ -1,16 +1,16 @@
 package main
 
 import (
-	"MovieBot/internal/pkg/clients/kinopoisk"
-	telegramClient "MovieBot/internal/pkg/clients/telegram"
-	eventConsumer "MovieBot/internal/pkg/consumer/event-consumer"
-	kinopoiskFetch "MovieBot/internal/pkg/events/kinopoisk"
-	"MovieBot/internal/pkg/events/telegram"
-	"MovieBot/internal/pkg/storage"
+	"MovieBot/internal/clients/kinopoisk"
+	telegramClient "MovieBot/internal/clients/telegram"
+	eventConsumer "MovieBot/internal/consumer/event-consumer"
+	kinopoiskFetch "MovieBot/internal/events/kinopoisk"
+	telegram2 "MovieBot/internal/events/telegram"
+	"MovieBot/internal/logger"
+	storage2 "MovieBot/internal/storage"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"log"
 	"os"
 )
 
@@ -21,8 +21,6 @@ const (
 )
 
 func main() {
-	logger := initLogger()
-
 	if err := initConfig(); err != nil {
 		logger.Fatal("error read config", zap.Error(err))
 	}
@@ -31,7 +29,7 @@ func main() {
 		logger.Fatal("error read .env", zap.Error(err))
 	}
 
-	db, err := storage.NewPostgresDB(storage.Config{
+	db, err := storage2.NewPostgresDB(storage2.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),
@@ -47,13 +45,13 @@ func main() {
 
 	movieApi := kinopoisk.NewKp(hostKp, os.Getenv("KINOPOISK_TOKEN"))
 
-	store := storage.NewStorage(db)
+	store := storage2.NewStorage(db)
 
 	movieFetcher := kinopoiskFetch.NewKpFetcher(movieApi, 4)
-	eventsFetcher := telegram.NewFetcher(tgClient)
-	eventsProcessor := telegram.NewProcessor(logger, tgClient, movieFetcher, store)
+	eventsFetcher := telegram2.NewFetcher(tgClient)
+	eventsProcessor := telegram2.NewProcessor(tgClient, movieFetcher, store)
 
-	consumer := eventConsumer.New(logger, eventsFetcher, eventsProcessor, batchSize)
+	consumer := eventConsumer.New(eventsFetcher, eventsProcessor, batchSize)
 
 	if err := consumer.Start(); err != nil {
 		logger.Fatal("error starting consumer", zap.Error(err))
@@ -65,13 +63,4 @@ func initConfig() error {
 	viper.AddConfigPath("configs")
 	viper.SetConfigName("config")
 	return viper.ReadInConfig()
-}
-
-func initLogger() *zap.Logger {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		log.Fatal("error logger init")
-	}
-
-	return logger
 }

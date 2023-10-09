@@ -1,8 +1,8 @@
 package messages
 
 import (
-	"MovieBot/internal/pkg/clients/telegram"
-	"MovieBot/internal/pkg/events"
+	"MovieBot/internal/clients/telegram"
+	"MovieBot/internal/events"
 	"errors"
 	"fmt"
 	"strings"

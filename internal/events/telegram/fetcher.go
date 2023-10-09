@@ -1,8 +1,8 @@
 package telegram
 
 import (
-	"MovieBot/internal/pkg/clients/telegram"
-	"MovieBot/internal/pkg/events"
+	telegram2 "MovieBot/internal/clients/telegram"
+	"MovieBot/internal/events"
 	"github.com/pkg/errors"
 )
 
@@ -19,11 +19,11 @@ type CallbackMeta struct {
 }
 
 type Fetcher struct {
-	tg     *telegram.Client
+	tg     *telegram2.Client
 	offset int
 }
 
-func NewFetcher(tg *telegram.Client) *Fetcher {
+func NewFetcher(tg *telegram2.Client) *Fetcher {
 	return &Fetcher{
 		tg: tg,
 	}
@@ -49,7 +49,7 @@ func (f *Fetcher) Fetch(limit int) ([]events.Event, error) {
 	return res, nil
 }
 
-func (f *Fetcher) event(upd telegram.Update) events.Event {
+func (f *Fetcher) event(upd telegram2.Update) events.Event {
 	updType := fetchType(upd)
 
 	res := events.Event{
@@ -75,7 +75,7 @@ func (f *Fetcher) event(upd telegram.Update) events.Event {
 	return res
 }
 
-func fetchType(upd telegram.Update) events.Type {
+func fetchType(upd telegram2.Update) events.Type {
 	if upd.CallbackQuery != nil {
 		return events.CallbackQuery
 	}
@@ -87,7 +87,7 @@ func fetchType(upd telegram.Update) events.Type {
 	return events.Unknown
 }
 
-func fetchText(upd telegram.Update) string {
+func fetchText(upd telegram2.Update) string {
 	if upd.CallbackQuery != nil {
 		return upd.CallbackQuery.Data
 	}

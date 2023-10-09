@@ -1,8 +1,8 @@
 package kinopoisk
 
 import (
-	"MovieBot/internal/pkg/clients/kinopoisk"
-	"MovieBot/internal/pkg/events"
+	"MovieBot/internal/clients/kinopoisk"
+	"MovieBot/internal/events"
 	"github.com/pkg/errors"
 )
 

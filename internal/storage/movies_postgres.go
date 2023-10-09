@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"MovieBot/internal/pkg/events"
+	"MovieBot/internal/events"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"

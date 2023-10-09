@@ -1,10 +1,11 @@
 package telegram
 
 import (
-	"MovieBot/internal/pkg/clients/telegram"
-	"MovieBot/internal/pkg/events"
-	"MovieBot/internal/pkg/events/telegram/messages"
-	"MovieBot/internal/pkg/storage"
+	"MovieBot/internal/clients/telegram"
+	"MovieBot/internal/events"
+	"MovieBot/internal/events/telegram/messages"
+	"MovieBot/internal/logger"
+	"MovieBot/internal/storage"
 	"fmt"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -23,7 +24,7 @@ const (
 )
 
 func (p *Processor) doCmd(text string, chatID int, username string) error {
-	p.logger.Info("got new command", zap.String("text", text), zap.String("from", username))
+	logger.Info("got new command", zap.String("text", text), zap.String("from", username))
 	text = strings.TrimSpace(text)
 	parts := strings.Split(text, " ")
 

@@ -1,9 +1,10 @@
 package telegram
 
 import (
-	"MovieBot/internal/pkg/clients/telegram"
-	"MovieBot/internal/pkg/events"
-	"MovieBot/internal/pkg/events/telegram/messages"
+	"MovieBot/internal/clients/telegram"
+	"MovieBot/internal/events"
+	"MovieBot/internal/events/telegram/messages"
+	"MovieBot/internal/logger"
 	"fmt"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -26,7 +27,7 @@ var ErrUnknownDataType = errors.New("unknown data type")
 var ErrDoNotHaveRequestId = errors.New("don't have request id")
 
 func (p *Processor) doButton(callbackID string, chatID int, messageID int, data string, username string) error {
-	p.logger.Info("got new callback query", zap.String("from", username), zap.String("data", data))
+	logger.Info("got new callback query", zap.String("from", username), zap.String("data", data))
 
 	parts := strings.Split(data, ";")
 
