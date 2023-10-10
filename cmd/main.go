@@ -3,16 +3,14 @@ package main
 import (
 	"MovieBot/internal/clients/kinopoisk"
 	telegramClient "MovieBot/internal/clients/telegram"
+	"MovieBot/internal/config"
 	eventConsumer "MovieBot/internal/consumer/event-consumer"
 	"MovieBot/internal/events/movie_fetcher"
 	"MovieBot/internal/events/processor/telegram"
 	"MovieBot/internal/events/tg_fetcher"
 	"MovieBot/internal/logger"
 	"MovieBot/internal/storage/postgres"
-	"github.com/joho/godotenv"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"os"
 )
 
 const (
@@ -22,29 +20,16 @@ const (
 )
 
 func main() {
-	if err := initConfig(); err != nil {
-		logger.Fatal("error read config", zap.Error(err))
-	}
+	conf := config.NewConfig()
 
-	if err := godotenv.Load(); err != nil {
-		logger.Fatal("error read .env", zap.Error(err))
-	}
-
-	db, err := postgres.NewPostgresDB(postgres.Config{
-		Host:     viper.GetString("db.host"),
-		Port:     viper.GetString("db.port"),
-		Username: viper.GetString("db.username"),
-		Password: os.Getenv("DB_PASSWORD"),
-		DBName:   viper.GetString("db.dbname"),
-		SSLMode:  viper.GetString("db.sslmode"),
-	})
+	db, err := postgres.NewPostgresDB(conf.DB())
 	if err != nil {
 		logger.Fatal("error sign in db", zap.Error(err))
 	}
 
-	tgClient := telegramClient.New(hostTg, os.Getenv("TG_TOKEN"))
+	tgClient := telegramClient.New(hostTg, conf.Tg())
 
-	movieApi := kinopoisk.NewKp(hostKp, os.Getenv("KINOPOISK_TOKEN"))
+	movieApi := kinopoisk.NewKp(hostKp, conf.Kinopoisk())
 
 	store := postgres.New(db)
 
@@ -57,11 +42,4 @@ func main() {
 	if err := consumer.Start(); err != nil {
 		logger.Fatal("error starting consumer", zap.Error(err))
 	}
-
-}
-
-func initConfig() error {
-	viper.AddConfigPath("configs")
-	viper.SetConfigName("config")
-	return viper.ReadInConfig()
 }
