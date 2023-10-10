@@ -1,4 +1,4 @@
-package processor
+package telegram
 
 import (
 	"MovieBot/internal/clients/telegram"
@@ -10,9 +10,9 @@ import (
 )
 
 type TgProcessor struct {
-	tg      *telegram.Client
+	tg      telegram.TgClient
 	kp      movie_fetcher.MovieFetcher
-	storage *storage.Storage
+	storage storage.Storage
 }
 
 const (
@@ -23,7 +23,7 @@ const (
 var ErrUnknownEventType = errors.New("unknown event type")
 var ErrUnknownMetaType = errors.New("unknown meta type")
 
-func NewTgProcessor(client *telegram.Client, kp movie_fetcher.MovieFetcher, storage *storage.Storage) *TgProcessor {
+func NewTgProcessor(client telegram.TgClient, kp movie_fetcher.MovieFetcher, storage storage.Storage) *TgProcessor {
 	return &TgProcessor{
 		tg:      client,
 		kp:      kp,

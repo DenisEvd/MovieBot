@@ -1,21 +1,13 @@
-package storage
+package postgres
 
 import (
+	"MovieBot/internal/storage"
 	"database/sql"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
-type RequestsPostgres struct {
-	db *sqlx.DB
-}
-
-func NewRequestsPostgres(db *sqlx.DB) *RequestsPostgres {
-	return &RequestsPostgres{db: db}
-}
-
-func (p *RequestsPostgres) AddRequest(text string) (int, error) {
+func (p *Postgres) AddRequest(text string) (int, error) {
 	var id int
 	query := fmt.Sprintf("INSERT INTO %s (request) values ($1) RETURNING id", requestsTable)
 	row := p.db.QueryRow(query, text)
@@ -25,7 +17,7 @@ func (p *RequestsPostgres) AddRequest(text string) (int, error) {
 	return id, nil
 }
 
-func (p *RequestsPostgres) DeleteRequest(id int) (string, error) {
+func (p *Postgres) DeleteRequest(id int) (string, error) {
 	tx, err := p.db.Beginx()
 	if err != nil {
 		return "", err
@@ -37,7 +29,7 @@ func (p *RequestsPostgres) DeleteRequest(id int) (string, error) {
 	if err := row.Scan(&request); err != nil {
 		_ = tx.Rollback()
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", ErrNoRequest
+			return "", storage.ErrNoRequest
 		}
 		return "", err
 	}

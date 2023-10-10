@@ -1,4 +1,4 @@
-package processor
+package telegram
 
 import (
 	"MovieBot/internal/clients/telegram"
@@ -86,7 +86,17 @@ func (p *TgProcessor) showMoreMovies(callbackID string, chatID int, messageID in
 	}
 
 	movies, err := p.kp.FetchMoviesByTitle(request)
+	if err != nil {
+		return errors.Wrap(err, "error show more movies")
+	}
 
+	if err := p.editMessage(chatID, messageID); err != nil {
+		return errors.Wrap(err, "error show more movies")
+	}
+
+	if len(movies) == 0 {
+		return p.tg.SendMessage(chatID, messages.MsgCanNotFindMovie)
+	}
 	sort.Slice(movies, func(i, j int) bool { return movies[i].Rating > movies[j].Rating })
 
 	buttons, err := p.makeMoviesButtons(movies)
@@ -96,11 +106,7 @@ func (p *TgProcessor) showMoreMovies(callbackID string, chatID int, messageID in
 
 	messageText := messages.MovieArrayMessage(movies)
 
-	if err := p.editMessage(chatID, messageID); err != nil {
-		return errors.Wrap(err, "error show more movies")
-	}
-
-	return p.tg.SendMessageWithInlineKeyboard(chatID, "Which one?\n"+messageText, buttons)
+	return p.tg.SendMessageWithInlineKeyboard(chatID, messages.HeaderOfMoreMovieList+messageText, buttons)
 }
 
 func (p *TgProcessor) saveMovie(callbackID string, chatID int, messageID int, data string, username string, requestID string) error {
@@ -148,7 +154,7 @@ func (p *TgProcessor) saveMovie(callbackID string, chatID int, messageID int, da
 		return err
 	}
 
-	err = p.storage.AddMovie(username, &movie)
+	err = p.storage.AddMovie(username, movie)
 	if err != nil {
 		return errors.Wrap(err, "saving movie")
 	}
@@ -216,7 +222,7 @@ func (p *TgProcessor) makeMoviesButtons(movies []events.Movie) ([]telegram.Inlin
 		}
 		buttons = append(buttons, button)
 	}
-	cancelButton, _ := messages.MakeButton("Cancel", canselButton)
+	cancelButton, _ := messages.MakeButton(messages.ButtonCancel, canselButton)
 	buttons = append(buttons, cancelButton)
 
 	return buttons, nil

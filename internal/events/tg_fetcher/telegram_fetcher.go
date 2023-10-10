@@ -6,18 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type MessageMeta struct {
-	ChatID   int
-	Username string
-}
-
-type CallbackMeta struct {
-	CallbackID string
-	ChatID     int
-	MessageID  int
-	Username   string
-}
-
 type Fetcher struct {
 	tg     *telegram2.Client
 	offset int

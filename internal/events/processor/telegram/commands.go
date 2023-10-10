@@ -1,4 +1,4 @@
-package processor
+package telegram
 
 import (
 	"MovieBot/internal/clients/telegram"
@@ -71,8 +71,8 @@ func (p *TgProcessor) suggestMovie(text string, chatID int) error {
 	buttonDataNo := fmt.Sprintf("%s;%d", findMoreButton, requestID)
 	buttonDataYes := fmt.Sprintf("%s;%d;%d", saveButton, movies[0].ID, requestID)
 	buttons := make([]telegram.InlineKeyboardButton, 2)
-	buttons[0], _ = messages.MakeButton("No", buttonDataNo)
-	buttons[1], _ = messages.MakeButton("Yes", buttonDataYes)
+	buttons[0], _ = messages.MakeButton(messages.ButtonNo, buttonDataNo)
+	buttons[1], _ = messages.MakeButton(messages.ButtonYes, buttonDataYes)
 
 	messageText := messages.MovieMessage(movies[0])
 
@@ -115,7 +115,7 @@ func (p *TgProcessor) sendAll(chatID int, username string) error {
 	}
 
 	message := messages.MovieArrayMessage(movies)
-	return p.tg.SendMessage(chatID, "Your movies list:\n"+message)
+	return p.tg.SendMessage(chatID, messages.HeaderOfMovieList+message)
 }
 
 func (p *TgProcessor) sendHelp(chatID int) error {
@@ -143,9 +143,9 @@ func (p *TgProcessor) sendMovie(chatID int, movie events.Movie, n int) error {
 	buttonNextData := fmt.Sprintf("%s;%d", getNextButton, n)
 	buttonWatchData := fmt.Sprintf("%s;%d", watchItButton, movie.ID)
 	buttons := make([]telegram.InlineKeyboardButton, 3)
-	buttons[0], _ = messages.MakeButton("Next", buttonNextData)
-	buttons[1], _ = messages.MakeButton("Watch it!", buttonWatchData)
-	buttons[2], _ = messages.MakeButton("Cancel", canselButton)
+	buttons[0], _ = messages.MakeButton(messages.ButtonNext, buttonNextData)
+	buttons[1], _ = messages.MakeButton(messages.ButtonWatch, buttonWatchData)
+	buttons[2], _ = messages.MakeButton(messages.ButtonCancel, canselButton)
 
 	if movie.Poster != "" {
 		if err := p.tg.SendPhotoWithInlineKeyboard(chatID, messages.MovieMessage(movie), movie.Poster, buttons); err != nil {

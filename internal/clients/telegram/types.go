@@ -1,5 +1,16 @@
 package telegram
 
+type TgClient interface {
+	Updates(offset, limit int) ([]Update, error)
+	SendMessage(chatID int, text string) error
+	SendPhotoWithInlineKeyboard(chatID int, text string, photoURL string, buttons []InlineKeyboardButton) error
+	SendMessageWithInlineKeyboard(chatID int, text string, buttons []InlineKeyboardButton) error
+	AnswerCallbackQuery(queryID string, text string) error
+
+	EditMessageReplyMarkup(chatID int, messageID int) error
+	DeleteMessage(chatID int, messageID int) (bool, error)
+}
+
 type UpdatesResponse struct {
 	Ok     bool     `json:"ok"`
 	Result []Update `json:"result"`

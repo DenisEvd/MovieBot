@@ -22,6 +22,15 @@ const (
 
 	MsgEnjoyWatching = "Enjoy!"
 	MsgOkay          = "Okay!"
+
+	HeaderOfMovieList     = "Your movies list:\n"
+	HeaderOfMoreMovieList = "Which one?\n"
+
+	ButtonNext   = "Next"
+	ButtonWatch  = "Watch it!"
+	ButtonCancel = "Cancel"
+	ButtonNo     = "No"
+	ButtonYes    = "Yes"
 )
 
 var ErrTooBigData = errors.New("data is bigger then 64 bytes")

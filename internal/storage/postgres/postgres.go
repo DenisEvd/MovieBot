@@ -1,4 +1,4 @@
-package storage
+package postgres
 
 import (
 	"fmt"
@@ -20,6 +20,14 @@ const (
 	moviesTable   = "movies"
 	requestsTable = "requests"
 )
+
+type Postgres struct {
+	db *sqlx.DB
+}
+
+func New(db *sqlx.DB) *Postgres {
+	return &Postgres{db: db}
+}
 
 func NewPostgresDB(cfg Config) (*sqlx.DB, error) {
 	db, err := sqlx.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",

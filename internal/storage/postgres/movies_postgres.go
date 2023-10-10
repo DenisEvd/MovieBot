@@ -1,21 +1,13 @@
-package storage
+package postgres
 
 import (
 	"MovieBot/internal/events"
+	"MovieBot/internal/storage"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
-type MoviesPostgres struct {
-	db *sqlx.DB
-}
-
-func NewMoviesPostgres(db *sqlx.DB) *MoviesPostgres {
-	return &MoviesPostgres{db: db}
-}
-
-func (p *MoviesPostgres) GetAll(username string) ([]events.Movie, error) {
+func (p *Postgres) GetAll(username string) ([]events.Movie, error) {
 	query := fmt.Sprintf("SELECT m.movie_id, m.title, m.year, m.description, m.poster, m.rating, m.length FROM %s r INNER JOIN %s m ON m.movie_id=r.movie_id WHERE r.username=$1 AND r.is_watched=false ORDER BY m.movie_id", recordsTable, moviesTable)
 
 	var movies []events.Movie
@@ -36,13 +28,13 @@ func (p *MoviesPostgres) GetAll(username string) ([]events.Movie, error) {
 	}
 
 	if len(movies) == 0 {
-		return []events.Movie{}, ErrNoSavedMovies
+		return []events.Movie{}, storage.ErrNoSavedMovies
 	}
 
 	return movies, nil
 }
 
-func (p *MoviesPostgres) GetNMovie(username string, n int) (events.Movie, error) {
+func (p *Postgres) GetNMovie(username string, n int) (events.Movie, error) {
 	var count int
 	querySelectCount := fmt.Sprintf("SELECT COUNT(*) FROM %s r WHERE r.username=$1 AND r.is_watched=false", recordsTable)
 	if err := p.db.QueryRow(querySelectCount, username).Scan(&count); err != nil {
@@ -50,7 +42,7 @@ func (p *MoviesPostgres) GetNMovie(username string, n int) (events.Movie, error)
 	}
 
 	if count == 0 {
-		return events.Movie{}, ErrNoSavedMovies
+		return events.Movie{}, storage.ErrNoSavedMovies
 	}
 
 	var movie events.Movie
@@ -62,7 +54,7 @@ func (p *MoviesPostgres) GetNMovie(username string, n int) (events.Movie, error)
 	return movie, nil
 }
 
-func (p *MoviesPostgres) AddMovie(username string, movie *events.Movie) error {
+func (p *Postgres) AddMovie(username string, movie events.Movie) error {
 	tx, err := p.db.Beginx()
 	if err != nil {
 		return err
@@ -92,7 +84,7 @@ func (p *MoviesPostgres) AddMovie(username string, movie *events.Movie) error {
 	return tx.Commit()
 }
 
-func (p *MoviesPostgres) Watch(username string, movieID int) error {
+func (p *Postgres) Watch(username string, movieID int) error {
 	query := fmt.Sprintf("UPDATE %s SET is_watched=true WHERE username=$1 AND movie_id=$2", recordsTable)
 
 	_, err := p.db.Exec(query, username, movieID)
@@ -103,7 +95,7 @@ func (p *MoviesPostgres) Watch(username string, movieID int) error {
 	return nil
 }
 
-func (p *MoviesPostgres) IsWatched(username string, movieID int) (bool, error) {
+func (p *Postgres) IsWatched(username string, movieID int) (bool, error) {
 	query := fmt.Sprintf("SELECT is_watched FROM %s WHERE username=$1 AND movie_id=$2", recordsTable)
 
 	var isWatched bool
@@ -114,14 +106,14 @@ func (p *MoviesPostgres) IsWatched(username string, movieID int) (bool, error) {
 	return isWatched, nil
 }
 
-func (p *MoviesPostgres) Remove(username string, movieID int) error {
+func (p *Postgres) Remove(username string, movieID int) error {
 	query := fmt.Sprintf("DELETE FROM %s r WHERE r.username=$1 AND r.movie_id=$2", recordsTable)
 
 	_, err := p.db.Exec(query, username, movieID)
 	return err
 }
 
-func (p *MoviesPostgres) IsExistRecord(username string, movieID int) (bool, error) {
+func (p *Postgres) IsExistRecord(username string, movieID int) (bool, error) {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s r WHERE r.username=$1 AND r.movie_id=$2", recordsTable)
 
 	var count int
@@ -132,7 +124,7 @@ func (p *MoviesPostgres) IsExistRecord(username string, movieID int) (bool, erro
 	return count != 0, nil
 }
 
-func (p *MoviesPostgres) isExistMovie(movieID int) (bool, error) {
+func (p *Postgres) isExistMovie(movieID int) (bool, error) {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE movie_id=$1", moviesTable)
 
 	var count int
