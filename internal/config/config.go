@@ -9,6 +9,11 @@ import (
 	"os"
 )
 
+const (
+	configPath     = "configs"
+	configFileName = "config"
+)
+
 type Config struct{}
 
 func NewConfig() *Config {
@@ -19,8 +24,8 @@ func NewConfig() *Config {
 }
 
 func (c *Config) initConfig() {
-	viper.AddConfigPath("configs")
-	viper.SetConfigName("config")
+	viper.AddConfigPath(configPath)
+	viper.SetConfigName(configFileName)
 
 	err := viper.ReadInConfig()
 	if err != nil {
