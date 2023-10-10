@@ -30,7 +30,15 @@ func (c *Config) initConfig() {
 		logger.Fatal("error init config", zap.Error(err))
 	}
 
-	if err := viper.BindEnv("db_password"); err != nil {
+	if err := viper.BindEnv("postgres_password"); err != nil {
+		logger.Fatal("error bind env", zap.Error(err))
+	}
+
+	if err := viper.BindEnv("postgres_user"); err != nil {
+		logger.Fatal("error bind env", zap.Error(err))
+	}
+
+	if err := viper.BindEnv("postgres_db"); err != nil {
 		logger.Fatal("error bind env", zap.Error(err))
 	}
 
@@ -47,9 +55,9 @@ func (c *Config) DB() *postgres.Config {
 	return &postgres.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
-		Username: viper.GetString("db.username"),
-		Password: viper.GetString("db_password"),
-		DBName:   viper.GetString("db.dbname"),
+		Username: viper.GetString("postgres_user"),
+		Password: viper.GetString("postgres_password"),
+		DBName:   viper.GetString("postgres_db"),
 		SSLMode:  viper.GetString("db.sslmode"),
 	}
 }
